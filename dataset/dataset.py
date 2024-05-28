@@ -17,13 +17,21 @@ class Kimore(Dataset):
         label = self.labels[index]
         score = self.scores[index]
         if self.transform :
-            return torch.tensor(x,dtype=torch.float32), torch.tensor(label,dtype=torch.float32), torch.tensor(score,dtype= torch.float32)
+             x = self.transform(x)
+        return torch.tensor(x,dtype=torch.float32), torch.tensor(label,dtype=torch.float32), torch.tensor(score,dtype= torch.float32)
 
 
-def load_data(root_dir,batch_size,shuffle):
+def load_data(root_dir):
     data = np.load(root_dir+'data.npy')
     labels = np.load(root_dir+'labels.npy')
     scores = np.load(root_dir+'scores.npy')
-    dataset = Kimore(data,labels,scores)
-    dataloader = DataLoader(dataset,batch_size=batch_size,shuffle = True)
-    return dataloader
+   
+  
+    return data,labels,scores
+
+
+
+
+
+
+

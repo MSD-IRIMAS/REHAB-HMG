@@ -8,7 +8,8 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
 from model.CVAE import CVAE
-
+from torch.utils.data import DataLoader
+import torch
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -63,6 +64,7 @@ def get_args():
         type=int,
         default=2000
     )
+    parser.add_argument('--device', help="Device to run the training on.", type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
 
     args = parser.parse_args()
 
@@ -90,8 +92,11 @@ if __name__ == "__main__":
 
 
     dataset_dir = 'data/' + args.dataset + '/'
-    data = load_data(root_dir=dataset_dir,batch_size=16,shuffle=True)
-    
+    data,labels,scores = load_data(root_dir=dataset_dir)
+    dataset = Kimore(data,labels,scores)
+    dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu" )
+
     for _run in range(args.runs):
 
             output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
@@ -99,11 +104,13 @@ if __name__ == "__main__":
 
             if args.generative_model == 'CVAE':
                 generator = CVAE(output_directory=output_directory_run,
+                device=args.device,
                                
                                 
                                 w_rec=args.weight_rec,
                                 w_kl=args.weight_kl,
+
                                 )
 
             
-            generator.train(data)             
+            generator.train_function(dataloader,device)             

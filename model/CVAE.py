@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 import torchvision
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ sys.path.append('/home/hferrar/REHABProject/model/utils')
 from utils.plot import plot_loss, plot_latent_space
 
 class CVAE(nn.Module):
-    def __init__(self,output_directory,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,epochs=500,lr=1e-3,w_kl=1e-3,w_rec=0.999):
+    def __init__(self,output_directory,device,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,epochs=500,lr=1e-3,w_kl=1e-3,w_rec=0.999):
         super(CVAE, self).__init__()
         self.output_directory = output_directory
         
@@ -102,7 +103,7 @@ class CVAE(nn.Module):
             score = self.condition_on_score(score)
             label =self.condition_on_label(label)
             z = torch.cat((z, label,score), dim=1)
-            z = self.fc3(z)
+            z = self.fc(z)
             z = z.view(z.size(0), self.filters, 623)   
             z = F.relu(self.deconv6(z))
             z = F.relu(self.deconv5(z))
@@ -120,32 +121,34 @@ class CVAE(nn.Module):
             z = self.reparameterize(mu,logvar)
             x_reconst = self.decode(z,label,score)
             return x_reconst, mu, logvar
-    
+    @staticmethod
     def kl_loss(mu,log_var):
         return -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(),dim=1)
-
+    @staticmethod
     def mse_loss(reconstructed_x,x):
         return torch.mean(torch.sum((reconstructed_x - x) ** 2, axis=1),axis=[1,2])
 
     def train_step(self, x, label, score, optimizer):
         self.train()
-        x = x.to(device)
+        x = x.to(self.device)
         label = torch.tensor(label, dtype=torch.long)
-        label = label.to(device)
-        score = score.to(device)
-        label= F.one_hot(label, num_classes=self.num_classes)
+        label = label.to(self.device)
+        score = score.to(self.device)
+        label = F.one_hot(label, num_classes=self.num_classes)
         optimizer.zero_grad()
         mu, log_var = self.encode(x, label)
         latent_space = self.reparameterize(mu, log_var)
         reconstructed_samples = self.decode(latent_space, label, score)
         loss_rec = self.mse_loss(reconstructed_samples, x)
         loss_kl = self.kl_loss(mu, log_var)
-        total_loss = torch.mean(self.w_rec*loss_rec + self.w_kl*loss_kl)
+        total_loss = torch.mean(self.w_rec * loss_rec + self.w_kl * loss_kl)
         total_loss.backward()
         optimizer.step()
         return loss_rec.mean().item(), loss_kl.mean().item(), total_loss.mean().item()
-    
-    def train(self,dataloader):
+
+    def train_function(self, dataloader, device):
+        self.device = device
+        self.to(device)
         loss = []
         loss_kl = []
         loss_rec = []
@@ -155,16 +158,57 @@ class CVAE(nn.Module):
             loss_value = 0.0
             loss_kl_value = 0.0
             loss_rec_value = 0.0
-            for data, labels,score in enumerate(dataloader): 
+            for batch_idx, (data, label, score) in enumerate(dataloader):
                 loss_rec_tf, loss_kl_tf, loss_tf = self.train_step(data, label, score, optimizer)
                 loss_value += loss_tf
                 loss_kl_value += loss_kl_tf
                 loss_rec_value += loss_rec_tf
-            loss.append(loss_value / number_batches)
-            loss_kl.append(loss_kl_value / number_batches)
-            loss_rec.append(loss_rec_value / number_batches)
-            print(f"epoch: {_epoch}, total loss: {loss[-1]}, rec loss: {loss_rec[-1]}, kl loss: {loss_kl[-1]}")
-        plot_loss(self.epochs,loss,loss_rec,loss_kl)
+            loss.append(loss_value / len(dataloader))
+            loss_kl.append(loss_kl_value / len(dataloader))
+            loss_rec.append(loss_rec_value / len(dataloader))
+            print(f"epoch: {epoch}, total loss: {loss[-1]}, rec loss: {loss_rec[-1]}, kl loss: {loss_kl[-1]}")
+        plot_loss(self.epochs, loss, loss_rec, loss_kl)
+
+
+    # def train_function(self,dataloader,device):
+    #     self.device = device
+    #     self.to(device)
+    #     loss = []
+    #     loss_kl = []
+    #     loss_rec = []
+    #     optimizer = optim.Adam(self.parameters(), lr=self.lr)
+    #     min_loss = float('inf')
+    #     self.train()
+        
+    #     for epoch in range(self.epochs):
+    #         loss_value = 0.0
+    #         loss_kl_value = 0.0
+    #         loss_rec_value = 0.0
+    #         for batch_idx,( x, label,score) in enumerate(dataloader): 
+    #             x = x.to(device)
+    #             label = torch.tensor(label, dtype=torch.long)
+    #             label = label.to(device)
+    #             score = score.to(device)
+    #             label= F.one_hot(label, num_classes=self.num_classes)
+    #             optimizer.zero_grad()
+    #             mu, log_var = self.encode(x, label)
+    #             latent_space = self.reparameterize(mu, log_var)
+    #             reconstructed_samples = self.decode(latent_space, label, score)
+    #             loss_rec = self.mse_loss(reconstructed_samples, x)
+    #             loss_kl = self.kl_loss(mu, log_var)
+    #             total_loss = torch.mean(self.w_rec*loss_rec + self.w_kl*loss_kl)
+    #             total_loss.backward()
+    #             optimizer.step()
+
+               
+    #             loss_value += total_loss
+    #             loss_kl_value += loss_kl
+    #             loss_rec_value += loss_rec
+    #         loss.append(loss_value / number_batches)
+    #         loss_kl.append(loss_kl_value / number_batches)
+    #         loss_rec.append(loss_rec_value / number_batches)
+    #         print(f"epoch: {_epoch}, total loss: {loss[-1]}, rec loss: {loss_rec[-1]}, kl loss: {loss_kl[-1]}")
+    #     plot_loss(self.epochs,loss,loss_rec,loss_kl)
 
 
     def extract_latent_space(self, dataloader):
@@ -173,6 +217,7 @@ class CVAE(nn.Module):
             latent_space = []
             labels = []
             for data, batch_labels ,score in dataloader:
+                
                 labels.extend(batch_labels)
                 data = data.to(device)
                 score = score.to(device)
