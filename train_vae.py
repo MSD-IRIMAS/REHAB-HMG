@@ -59,12 +59,18 @@ def get_args():
     )
 
     parser.add_argument(
-        '--n-epochs',
-        help="Number of epochs to train the generative model.",
+        '--epochs',
+        help="Number of epochs to train the model.",
         type=int,
-        default=2000
+        default=20
     )
-    parser.add_argument('--device', help="Device to run the training on.", type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument(
+        '--device',
+        help="Device to run the training on.",
+        type=str,
+        choices=['cpu', 'cuda', 'mps'],
+        default='cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu')
+    )
 
     args = parser.parse_args()
 
@@ -104,6 +110,7 @@ if __name__ == "__main__":
 
             if args.generative_model == 'CVAE':
                 generator = CVAE(output_directory=output_directory_run,
+                epochs=args.epochs,
                 device=args.device,
                                
                                 
@@ -113,4 +120,5 @@ if __name__ == "__main__":
                                 )
 
             
-            generator.train_function(dataloader,device)             
+            generator.train_function(dataloader,device)
+            generator.visualize_latent_space(dataloader,device)             

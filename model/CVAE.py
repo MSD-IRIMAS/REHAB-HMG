@@ -15,10 +15,10 @@ sys.path.append('/home/hferrar/REHABProject/model/utils')
 from utils.plot import plot_loss, plot_latent_space
 
 class CVAE(nn.Module):
-    def __init__(self,output_directory,device,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,epochs=500,lr=1e-3,w_kl=1e-3,w_rec=0.999):
+    def __init__(self,output_directory,epochs,device,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,lr=1e-3,w_kl=1e-3,w_rec=0.999):
         super(CVAE, self).__init__()
         self.output_directory = output_directory
-        
+        self.epochs = epochs
         self.latent_dimension = latent_dimension
         self.num_classes = num_classes
         self.mlp_dim = mlp_dim
@@ -26,7 +26,7 @@ class CVAE(nn.Module):
         self.score_dim = score_dim
         self.hid_score= hid_score
         self.filters = filters
-        self.epochs = epochs
+        
         self.lr = lr
         self.w_kl =w_kl
         self.w_rec=w_rec
@@ -60,6 +60,25 @@ class CVAE(nn.Module):
         self.deconv2 = nn.ConvTranspose1d(self.filters,self.filters,kernel_size=30)
         self.deconv1 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=60)
         self.deconv0 = nn.ConvTranspose1d(self.filters,54,kernel_size=1)
+        self.encoder = nn.Sequential(
+            self.conv1,
+            self.conv2,
+            self.conv3,
+            self.conv4,
+            self.conv5,
+            self.conv6,
+            nn.Flatten()
+        )
+        
+        self.decoder = nn.Sequential(
+            self.deconv6,
+            self.deconv5,
+            self.deconv4,
+            self.deconv3,
+            self.deconv2,
+            self.deconv1,
+            self.deconv0
+        )
 
 
     def condition_on_label(self, y):
@@ -167,74 +186,73 @@ class CVAE(nn.Module):
             loss_kl.append(loss_kl_value / len(dataloader))
             loss_rec.append(loss_rec_value / len(dataloader))
             print(f"epoch: {epoch}, total loss: {loss[-1]}, rec loss: {loss_rec[-1]}, kl loss: {loss_kl[-1]}")
-        plot_loss(self.epochs, loss, loss_rec, loss_kl)
+            if loss[-1] < min_loss:
+
+                min_loss = loss[-1]
+                torch.save(self.encoder.state_dict(), os.path.join(self.output_directory, 'best_encoder.pth'))
+                torch.save(self.decoder.state_dict(), os.path.join(self.output_directory, 'best_decoder.pth'))
 
 
-    # def train_function(self,dataloader,device):
-    #     self.device = device
-    #     self.to(device)
-    #     loss = []
-    #     loss_kl = []
-    #     loss_rec = []
-    #     optimizer = optim.Adam(self.parameters(), lr=self.lr)
-    #     min_loss = float('inf')
-    #     self.train()
-        
-    #     for epoch in range(self.epochs):
-    #         loss_value = 0.0
-    #         loss_kl_value = 0.0
-    #         loss_rec_value = 0.0
-    #         for batch_idx,( x, label,score) in enumerate(dataloader): 
-    #             x = x.to(device)
-    #             label = torch.tensor(label, dtype=torch.long)
-    #             label = label.to(device)
-    #             score = score.to(device)
-    #             label= F.one_hot(label, num_classes=self.num_classes)
-    #             optimizer.zero_grad()
-    #             mu, log_var = self.encode(x, label)
-    #             latent_space = self.reparameterize(mu, log_var)
-    #             reconstructed_samples = self.decode(latent_space, label, score)
-    #             loss_rec = self.mse_loss(reconstructed_samples, x)
-    #             loss_kl = self.kl_loss(mu, log_var)
-    #             total_loss = torch.mean(self.w_rec*loss_rec + self.w_kl*loss_kl)
-    #             total_loss.backward()
-    #             optimizer.step()
+        torch.save(self.encoder.state_dict(), os.path.join(self.output_directory, 'last_encoder.pth'))
+        torch.save(self.decoder.state_dict(), os.path.join(self.output_directory, 'last_decoder.pth'))
 
-               
-    #             loss_value += total_loss
-    #             loss_kl_value += loss_kl
-    #             loss_rec_value += loss_rec
-    #         loss.append(loss_value / number_batches)
-    #         loss_kl.append(loss_kl_value / number_batches)
-    #         loss_rec.append(loss_rec_value / number_batches)
-    #         print(f"epoch: {_epoch}, total loss: {loss[-1]}, rec loss: {loss_rec[-1]}, kl loss: {loss_kl[-1]}")
-    #     plot_loss(self.epochs,loss,loss_rec,loss_kl)
-
-
-    def extract_latent_space(self, dataloader):
+        plot_loss(self.epochs, loss, loss_rec, loss_kl,self.output_directory)
+    # @staticmethod
+    def visualize_latent_space(self,dataloader,device):
+        self.device = device
         self.eval()
-        with torch.no_grad():
+        
+        self.encoder.load_state_dict(torch.load(self.output_directory + 'best_encoder.pth'))
+        self.encoder.to(self.device)
+        self.encoder.eval()
+        
+        with torch.no_grad(): 
             latent_space = []
             labels = []
-            for data, batch_labels ,score in dataloader:
-                
+            for data, batch_labels, score in dataloader:
                 labels.extend(batch_labels)
-                data = data.to(device)
-                score = score.to(device)
-                batch_labels = batch_labels.to(device)
-                batch_labels = torch.tensor(batch_labels,dtype=torch.long).squeeze()
-                batch_labels = F.one_hot(batch_labels, num_classes=num_classes)
-                mu, _ = model.encode(data, batch_labels)
+                data = data.to(self.device)
+                batch_labels = torch.tensor(batch_labels, dtype=torch.long)
+                batch_labels = batch_labels.to(self.device)
+                batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
+                mu, var = self.encoder.encode(data,batch_labels)  
                 latent_space.append(mu.cpu().numpy())
             latent_space = np.vstack(latent_space)
             labels = [int(label.item()) for label in labels]
         tsne = TSNE(n_components=2, random_state=42)
         latent_2d = tsne.fit_transform(latent_space)
-        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space isung TSNE ")
+        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using TSNE ",self.output_directory)
         pca = PCA(n_components=2, random_state=42)
         latent_2d = pca.fit_transform(latent_space)
-        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ")
-           
+        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ",self.output_directory)
+
+
+
+    # def visualize_latent_space(self, dataloader, device):
+    #     self.device = device
+    #     self.to(device)
+    #     self.eval()
+    #     with torch.no_grad():
+    #         latent_space = []
+    #         labels = []
+    #         for data, batch_labels, score in dataloader:
+    #             labels.extend(batch_labels)
+    #             data = data.to(device)
+    #             score = score.to(device)
+    #             batch_labels = torch.tensor(batch_labels, dtype=torch.long)
+    #             batch_labels = batch_labels.to(device)
+    #             batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
+    #             mu, _ = self.encode(data, batch_labels)
+    #             latent_space.append(mu.cpu().numpy())
+    #         latent_space = np.vstack(latent_space)
+    #         labels = [int(label.item()) for label in labels]
+    #     tsne = TSNE(n_components=2, random_state=42)
+    #     latent_2d = tsne.fit_transform(latent_space)
+    #     plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using TSNE ",self.output_directory)
+    #     pca = PCA(n_components=2, random_state=42)
+    #     latent_2d = pca.fit_transform(latent_space)
+    #     plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ",self.output_directory)
+
 
 
 
