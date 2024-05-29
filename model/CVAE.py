@@ -60,25 +60,7 @@ class CVAE(nn.Module):
         self.deconv2 = nn.ConvTranspose1d(self.filters,self.filters,kernel_size=30)
         self.deconv1 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=60)
         self.deconv0 = nn.ConvTranspose1d(self.filters,54,kernel_size=1)
-        self.encoder = nn.Sequential(
-            self.conv1,
-            self.conv2,
-            self.conv3,
-            self.conv4,
-            self.conv5,
-            self.conv6,
-            nn.Flatten()
-        )
-        
-        self.decoder = nn.Sequential(
-            self.deconv6,
-            self.deconv5,
-            self.deconv4,
-            self.deconv3,
-            self.deconv2,
-            self.deconv1,
-            self.deconv0
-        )
+
 
 
     def condition_on_label(self, y):
@@ -136,9 +118,9 @@ class CVAE(nn.Module):
             return z
 
     def forward(self,x,label,score):
-            mu,logvar = self.encode(x,label)
+            mu,logvar = self.encoder(x,label)
             z = self.reparameterize(mu,logvar)
-            x_reconst = self.decode(z,label,score)
+            x_reconst = self.decoder(z,label,score)
             return x_reconst, mu, logvar
     @staticmethod
     def kl_loss(mu,log_var):
@@ -189,12 +171,12 @@ class CVAE(nn.Module):
             if loss[-1] < min_loss:
 
                 min_loss = loss[-1]
-                torch.save(self.encoder.state_dict(), os.path.join(self.output_directory, 'best_encoder.pth'))
-                torch.save(self.decoder.state_dict(), os.path.join(self.output_directory, 'best_decoder.pth'))
+                torch.save(self.encode.state_dict(), os.path.join(self.output_directory, 'best_encoder.pth'))
+                torch.save(self.decode.state_dict(), os.path.join(self.output_directory, 'best_decoder.pth'))
 
 
-        torch.save(self.encoder.state_dict(), os.path.join(self.output_directory, 'last_encoder.pth'))
-        torch.save(self.decoder.state_dict(), os.path.join(self.output_directory, 'last_decoder.pth'))
+        torch.save(self.encode.state_dict(), os.path.join(self.output_directory, 'last_encoder.pth'))
+        torch.save(self.decode.state_dict(), os.path.join(self.output_directory, 'last_decoder.pth'))
 
         plot_loss(self.epochs, loss, loss_rec, loss_kl,self.output_directory)
     # @staticmethod
@@ -202,9 +184,9 @@ class CVAE(nn.Module):
         self.device = device
         self.eval()
         
-        self.encoder.load_state_dict(torch.load(self.output_directory + 'best_encoder.pth'))
-        self.encoder.to(self.device)
-        self.encoder.eval()
+        self.encode.load_state_dict(torch.load(self.output_directory + 'best_encoder.pth'))
+        self.encode.to(self.device)
+        self.encode.eval()
         
         with torch.no_grad(): 
             latent_space = []
@@ -215,7 +197,7 @@ class CVAE(nn.Module):
                 batch_labels = torch.tensor(batch_labels, dtype=torch.long)
                 batch_labels = batch_labels.to(self.device)
                 batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
-                mu, var = self.encoder.encode(data,batch_labels)  
+                mu, var = self.encode(data,batch_labels)  
                 latent_space.append(mu.cpu().numpy())
             latent_space = np.vstack(latent_space)
             labels = [int(label.item()) for label in labels]
@@ -225,6 +207,7 @@ class CVAE(nn.Module):
         pca = PCA(n_components=2, random_state=42)
         latent_2d = pca.fit_transform(latent_space)
         plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ",self.output_directory)
+    # def generate_samples():
 
 
 
