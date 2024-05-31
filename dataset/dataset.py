@@ -1,11 +1,12 @@
 import torch
 import numpy as np
 from torch.utils.data import Subset, Dataset,DataLoader
+from utils.normalize import normalize_skeletons
 
 class Kimore(Dataset):
     def __init__(self,data,labels,scores,transform=None):
         self.transform = transform
-        self.data = data
+        self.data = normalize_skeletons(data)
         self.labels = labels
         self.scores = scores
 
