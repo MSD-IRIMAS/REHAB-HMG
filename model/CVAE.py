@@ -15,7 +15,7 @@ sys.path.append('/home/hferrar/REHABProject/model/utils')
 from utils.plot import plot_loss, plot_latent_space
 
 class CVAE(nn.Module):
-    def __init__(self,output_directory,epochs,device,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,lr=1e-3,w_kl=1e-3,w_rec=0.999):
+    def __init__(self,output_directory,epochs,device,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,lr=1e-4,w_kl=1e-3,w_rec=0.999):
         super(CVAE, self).__init__()
         self.output_directory = output_directory
         self.epochs = epochs
@@ -44,21 +44,22 @@ class CVAE(nn.Module):
               nn.ReLU(),
         )
 
-        self.conv1 = nn.Conv1d(54, self.filters, kernel_size=60)
-        self.conv2 = nn.Conv1d(self.filters,self.filters,kernel_size=30)
-        self.conv3 = nn.Conv1d(self.filters,self.filters,kernel_size=20)
-        self.conv4 = nn.Conv1d(self.filters,self.filters,kernel_size=11)
-        self.conv5 = nn.Conv1d(self.filters,self.filters,kernel_size=7)
-        self.conv6 = nn.Conv1d(self.filters,self.filters,kernel_size=3)
-        self.mu = nn.Linear(self.filters*623+mlp_dim , self.latent_dimension)
-        self.log_var = nn.Linear(self.filters*623+mlp_dim, self.latent_dimension)
-        self.fc = nn.Linear(self.latent_dimension+self.mlp_dim+self.mlp_dim , self.filters*623)
-        self.deconv6 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=3)
-        self.deconv5 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=7)
-        self.deconv4 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=11)   
-        self.deconv3 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=20)
-        self.deconv2 = nn.ConvTranspose1d(self.filters,self.filters,kernel_size=30)
-        self.deconv1 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=60)
+        self.conv1 = nn.Conv1d(54, self.filters, kernel_size=200)
+        self.conv2 = nn.Conv1d(self.filters,self.filters,kernel_size=100)
+        self.conv3 = nn.Conv1d(self.filters,self.filters,kernel_size=50)
+        self.conv4 = nn.Conv1d(self.filters,self.filters,kernel_size=25)
+        self.conv5 = nn.Conv1d(self.filters,self.filters,kernel_size=10)
+        self.conv6 = nn.Conv1d(self.filters,self.filters,kernel_size=5)
+        self.mu = nn.Linear(self.filters*364+mlp_dim , self.latent_dimension)
+        self.log_var = nn.Linear(self.filters*364+mlp_dim, self.latent_dimension)
+
+        self.fc = nn.Linear(self.latent_dimension+self.mlp_dim+self.mlp_dim , self.filters*364)
+        self.deconv6 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=5)
+        self.deconv5 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=10)
+        self.deconv4 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=25)   
+        self.deconv3 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=50)
+        self.deconv2 = nn.ConvTranspose1d(self.filters,self.filters,kernel_size=100)
+        self.deconv1 = nn.ConvTranspose1d(self.filters,self.filters, kernel_size=200)
         self.deconv0 = nn.ConvTranspose1d(self.filters,54,kernel_size=1)
 
 
@@ -105,7 +106,7 @@ class CVAE(nn.Module):
             label =self.condition_on_label(label)
             z = torch.cat((z, label,score), dim=1)
             z = self.fc(z)
-            z = z.view(z.size(0), self.filters, 623)   
+            z = z.view(z.size(0), self.filters, 364)   
             z = F.relu(self.deconv6(z))
             z = F.relu(self.deconv5(z))
             z = F.relu(self.deconv4(z))
@@ -145,7 +146,7 @@ class CVAE(nn.Module):
         total_loss = torch.mean(self.w_rec * loss_rec + self.w_kl * loss_kl)
         total_loss.backward()
         optimizer.step()
-        return loss_rec.mean().item(), loss_kl.mean().item(), total_loss.mean().item()
+        return loss_rec.mean().item(), loss_kl.mean().item(), total_loss.item()
 
     def train_function(self, dataloader, device):
         self.device = device
@@ -171,61 +172,31 @@ class CVAE(nn.Module):
             if loss[-1] < min_loss:
 
                 min_loss = loss[-1]
-                torch.save(self.encode.state_dict(), os.path.join(self.output_directory, 'best_encoder.pth'))
-                torch.save(self.decode.state_dict(), os.path.join(self.output_directory, 'best_decoder.pth'))
+                torch.save(self.state_dict(), os.path.join(self.output_directory, 'best_model.pth'))
 
-
-        torch.save(self.encode.state_dict(), os.path.join(self.output_directory, 'last_encoder.pth'))
-        torch.save(self.decode.state_dict(), os.path.join(self.output_directory, 'last_decoder.pth'))
+        # Save the final model
+        torch.save(self.state_dict(), os.path.join(self.output_directory, 'last_model.pth'))
 
         plot_loss(self.epochs, loss, loss_rec, loss_kl,self.output_directory)
     # @staticmethod
-    def visualize_latent_space(self,dataloader,device):
-        self.device = device
-        self.eval()
-        
-        self.encode.load_state_dict(torch.load(self.output_directory + 'best_encoder.pth'))
-        self.encode.to(self.device)
-        self.encode.eval()
-        
-        with torch.no_grad(): 
-            latent_space = []
-            labels = []
-            for data, batch_labels, score in dataloader:
-                labels.extend(batch_labels)
-                data = data.to(self.device)
-                batch_labels = torch.tensor(batch_labels, dtype=torch.long)
-                batch_labels = batch_labels.to(self.device)
-                batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
-                mu, var = self.encode(data,batch_labels)  
-                latent_space.append(mu.cpu().numpy())
-            latent_space = np.vstack(latent_space)
-            labels = [int(label.item()) for label in labels]
-        tsne = TSNE(n_components=2, random_state=42)
-        latent_2d = tsne.fit_transform(latent_space)
-        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using TSNE ",self.output_directory)
-        pca = PCA(n_components=2, random_state=42)
-        latent_2d = pca.fit_transform(latent_space)
-        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ",self.output_directory)
-    # def generate_samples():
-
-
-
-    # def visualize_latent_space(self, dataloader, device):
+    # def visualize_latent_space(self,dataloader,device):
     #     self.device = device
-    #     self.to(device)
     #     self.eval()
-    #     with torch.no_grad():
+        
+    #     self.encode.load_state_dict(torch.load(self.output_directory + 'best_encoder.pth'))
+    #     self.encode.to(self.device)
+    #     self.encode.eval()
+        
+    #     with torch.no_grad(): 
     #         latent_space = []
     #         labels = []
     #         for data, batch_labels, score in dataloader:
     #             labels.extend(batch_labels)
-    #             data = data.to(device)
-    #             score = score.to(device)
+    #             data = data.to(self.device)
     #             batch_labels = torch.tensor(batch_labels, dtype=torch.long)
-    #             batch_labels = batch_labels.to(device)
+    #             batch_labels = batch_labels.to(self.device)
     #             batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
-    #             mu, _ = self.encode(data, batch_labels)
+    #             mu, var = self.encode(data,batch_labels)  
     #             latent_space.append(mu.cpu().numpy())
     #         latent_space = np.vstack(latent_space)
     #         labels = [int(label.item()) for label in labels]
@@ -235,7 +206,72 @@ class CVAE(nn.Module):
     #     pca = PCA(n_components=2, random_state=42)
     #     latent_2d = pca.fit_transform(latent_space)
     #     plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ",self.output_directory)
+    # # def generate_samples():
 
+
+#ADD MEAN AND VARIANCE 2D VISUALIZATION.
+
+    def visualize_latent_space(self, dataloader, device):
+        self.device = device
+        self.to(device)
+        self.eval()
+        with torch.no_grad():
+            latent_space = []
+            labels = []
+            for data, batch_labels, score in dataloader:
+                labels.extend(batch_labels)
+                data = data.to(device)
+                score = score.to(device)
+                batch_labels = torch.tensor(batch_labels, dtype=torch.long)
+                batch_labels = batch_labels.to(device)
+                batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
+                mu, _ = self.encode(data, batch_labels)
+                latent_space.append(mu.cpu().numpy())
+            latent_space = np.vstack(latent_space)
+            labels = [int(label.item()) for label in labels]
+        tsne = TSNE(n_components=2, random_state=42)
+        latent_2d = tsne.fit_transform(latent_space)
+        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using TSNE ",self.output_directory)
+        pca = PCA(n_components=2, random_state=42)
+        latent_2d = pca.fit_transform(latent_space)
+        plot_latent_space(latent_2d, labels, "2D Visualization of Latent Space using PCA ",self.output_directory)
+    
+    def generate_skeleton(self, device,score, label):
+        self.device =device
+        self.to(device)
+        sample = torch.randn(1, latent_dimension).to(device)
+        score = torch.tensor([score_value * 100]).unsqueeze(1).to(device)
+        c = torch.eye(num_classes)[label].unsqueeze(0).to(device)
+        with torch.no_grad():
+                generated_sample = model.decode(sample, c, score).cpu().double().numpy()
+        np.save('generated_sample.npy', generated_sample)
+        return generated_sample
+    
+    def generate_samples(self,device,class_index):
+        sample = torch.randn(1, self.latent_dimension).to(device)
+        score_values = [0, 0.1 ,0.2 ,0.25 ,0.3 ,0.388 ,0.4 ,0.5 ,0.55 ,0.6 ,0.677 ,0.7 ,0.8 ,0.833 ,0.85 ,0.875 ,0.9 ,0.955 ,0.97 ,1.0]  
+        generated_samples = []
+        generated_scores = []
+
+        for score_value in score_values:
+            score = torch.tensor([score_value*100]).unsqueeze(1).to(device)
+            c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                generated_sample = self.decode(sample, c, score).cpu().double().numpy()
+                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                plot_skel(unnormalized_sample,self.output_directory,title='sample_ex'+c+'_score='+score)
+
+            generated_samples.append(generated_sample)
+
+        generated_samples_array = np.array(generated_samples)
+        scores_array = np.array(score_values)
+   
+            
+
+ 
+        np.save(os.path.join(self.output_directory,'generated_samples.npy'), generated_samples_array)
+        np.save(os.path.join(self.output_directory,'true_scores.npy'), scores_array)
 
 
 
