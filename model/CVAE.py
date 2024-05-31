@@ -13,6 +13,8 @@ from torch.autograd import Variable
 from sklearn.decomposition import PCA
 sys.path.append('/home/hferrar/REHABProject/model/utils')
 from utils.plot import plot_loss, plot_latent_space
+from utils.normalize import unnormalize_generated_skeletons
+from utils.visualize import plot_skel
 
 class CVAE(nn.Module):
     def __init__(self,output_directory,epochs,device,latent_dimension=16,num_classes=5,hid_dim=16,mlp_dim=16,hid_score=16,score_dim=1,filters=128,lr=1e-4,w_kl=1e-3,w_rec=0.999):
@@ -260,7 +262,7 @@ class CVAE(nn.Module):
             with torch.no_grad():
                 generated_sample = self.decode(sample, c, score).cpu().double().numpy()
                 unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                plot_skel(unnormalized_sample,self.output_directory,title='sample_ex'+c+'_score='+score)
+                plot_skel(unnormalized_sample,self.output_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
 
             generated_samples.append(generated_sample)
 

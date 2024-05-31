@@ -42,8 +42,8 @@ def plot_skel(x,output_directory,title):
     # x=reshape_npy_array(x)
     seq=x[0]
 
-    out_root_dir = output_directory+'/Viz'
-    out_pngs_dir = out_root_dir + '/pngs/'
+    out_root_dir = output_directory+'Viz/'
+    out_pngs_dir = out_root_dir + 'pngs/'
     out_gifs_dir = out_root_dir 
     create_directory(out_pngs_dir)
  
