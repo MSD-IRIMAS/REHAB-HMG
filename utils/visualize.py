@@ -36,15 +36,15 @@ def plot_limbs(ax, jointsX, jointsY, jointsZ):
 
 #######################################################################################################################################
 
-def plot_skel(x,root_dir):
+def plot_skel(x,output_directory,title):
     '''this function allows to plot the nodes and links
      of the skeleton as a lot of png files and then gather them in a gif.'''
     # x=reshape_npy_array(x)
     seq=x[0]
 
-    out_root_dir = root_dir+'/Viz'
+    out_root_dir = output_directory+'/Viz'
     out_pngs_dir = out_root_dir + '/pngs/'
-    out_gifs_dir = out_root_dir +'/gif/'
+    out_gifs_dir = out_root_dir 
     create_directory(out_pngs_dir)
  
     create_directory(out_gifs_dir)
@@ -52,8 +52,8 @@ def plot_skel(x,root_dir):
     ax = fig.add_subplot(111, projection='3d')
     ax.view_init(elev=23., azim=-110)
     file_names = []
-    numJoints=18
-    dim=3
+    numJoints = 18
+    dim = 3
     for i in range(0, seq.shape[0]):
         plt.cla()
         skelX = seq[i].reshape(numJoints, dim)[:, 0]
@@ -73,7 +73,7 @@ def plot_skel(x,root_dir):
     for file_name in file_names:
         images.append(iio.imread(out_pngs_dir + file_name))
 
-    out_file = out_gifs_dir +  'vizgif.gif'
+    out_file = out_gifs_dir +title+'.gif'
     kargs = {'duration': 0.01}
     iio.mimsave(out_file, images, 'GIF', **kargs)
 
