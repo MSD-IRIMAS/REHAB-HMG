@@ -48,21 +48,21 @@ def get_args():
         '--weight-rec',
         help="Weight for the reconstruction loss.",
         type=float,
-        default=1.0
+        default=0.99
     )
 
     parser.add_argument(
         '--weight-kl',
         help="Weight for the kl loss.",
         type=float,
-        default=1.0
+        default=1e-3
     )
 
     parser.add_argument(
         '--epochs',
         help="Number of epochs to train the model.",
         type=int,
-        default=20
+        default=1000
     )
     parser.add_argument(
         '--device',
@@ -121,4 +121,5 @@ if __name__ == "__main__":
 
             
             generator.train_function(dataloader,device)
-            generator.visualize_latent_space(dataloader,device)             
+            generator.visualize_latent_space(dataloader,device)       
+            generator.generate_samples(device,class_index=0)      
