@@ -33,7 +33,7 @@ def normalize_skeletons(X, min_X=None, max_X=None, min_Y=None, max_Y=None, min_Z
 def unnormalize_generated_skeletons(X_normalized):
     """Unnormalize the generated skeleton data."""
     X_unnormalized = np.zeros_like(X_normalized)
-    min_max_values = np.load('/home/hferrar/HMG/data/min_max_values.npz')
+    min_max_values = np.load('data/min_max_values.npz')
     min_X = min_max_values['min_X']
     max_X = min_max_values['max_X']
     min_Y = min_max_values['min_Y']

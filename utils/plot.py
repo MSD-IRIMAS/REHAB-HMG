@@ -22,3 +22,11 @@ def plot_loss(epochs, train_losses, train_recon_losses, train_kl_losses, output_
     
     plt.savefig(os.path.join(output_directory, 'loss.pdf'))
     plt.show()
+def plot_regressor_loss(epochs,train_loss,test_loss,output_directory):
+    plt.plot(range(1, epochs+1), train_loss, label='Train Loss')
+    plt.plot(range(1, epochs+1), test_loss, label='test Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss Curve')
+    plt.legend()
+    plt.show()

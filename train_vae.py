@@ -8,6 +8,7 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
 from model.CVAE import CVAE
+from model.cvae2 import CVA
 from torch.utils.data import DataLoader
 import torch
 
@@ -19,7 +20,7 @@ def get_args():
         '--generative-model',
         help="Which generative model to use .",
         type=str,
-        choices=['CVAE'],
+        choices=['CVAE','CVA'],
         default='CVAE',
     )
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     data,labels,scores = load_data(root_dir=dataset_dir)
     dataset = Kimore(data,labels,scores)
     dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu" )
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu" )
 
     for _run in range(args.runs):
 
@@ -120,6 +121,21 @@ if __name__ == "__main__":
                                 )
 
             
-            generator.train_function(dataloader,device)
-            generator.visualize_latent_space(dataloader,device)       
-            generator.generate_samples(device,class_index=0)      
+                generator.train_function(dataloader,device)
+                generator.visualize_latent_space(dataloader,device)       
+                generator.generate_samples(device,class_index=0)      
+            if args.generative_model == 'CVAE':
+                generator = CVA(output_directory=output_directory_run,
+                epochs=args.epochs,
+                device=args.device,
+                               
+                                
+                                w_rec=args.weight_rec,
+                                w_kl=args.weight_kl,
+
+                                )
+
+            
+                generator.train_function(dataloader,device=args.device)
+                generator.visualize_latent_space(dataloader,device=args.device)       
+                generator.generate_samples(device=args.device,class_index=0)      
