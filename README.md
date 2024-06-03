@@ -11,7 +11,7 @@
 
 <summary>Click to expand</summary>
 
-### 1. Create conda environment
+### Create conda environment
 
 <details><summary>Instructions</summary>
 
@@ -36,8 +36,7 @@ The code was tested on Python 3.10.13 and PyTorch 2.2
 
 ## How to generate motions:
 
-
-<details><summary>Click to expand</summary>
+<summary>Click to expand</summary>
 
 The command to launch a training experiment and generating samples is the folowing:
 ```bash
@@ -54,7 +53,7 @@ python3 train_vae.py --generative-model CVAE --dataset Kimore --output-directory
 - ``Device=mps``: training with MPS, training on GPU for MacOS devices with Metal programming framework.
 - ``Device=cpu``: training on the CPU (not recommended)
 
-</details>
+
 
 
 
