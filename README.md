@@ -1,3 +1,7 @@
+# HMG: Human Motion Generation
+<div align="center">
+## Generating Rehabilitation Human Motion based on a score
+</div>
 torch =8.6.12
 torchvisison = 0.17
 sns = 0.13.2
