@@ -9,7 +9,7 @@
 
 ## Installation :construction_worker:
 
-<details><summary>Click to expand</summary>
+<summary>Click to expand</summary>
 
 ### 1. Create conda environment
 
@@ -58,5 +58,3 @@ python3 train_vae.py --generative-model CVAE --dataset Kimore --output-directory
 
 
 
-
-</details>
