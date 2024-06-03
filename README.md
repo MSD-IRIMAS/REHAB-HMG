@@ -1,5 +1,3 @@
-
-
 <div align="center">
 
 # HMG: Human Motion Generation
@@ -27,6 +25,7 @@ pip install imageio
 pip install pandas
 pip install seaborn
 pip install matplotlib
+pip install scikit-learn
 ```
 The code was tested on Python 3.10.13 and PyTorch 2.2
 
@@ -35,9 +34,8 @@ The code was tested on Python 3.10.13 and PyTorch 2.2
 
 ## How to generate motions:
 
-<summary>Click to expand</summary>
 
-The command to launch a training experiment and generating samples is the folowing:
+The command to launch a training experiment and generating skeletons is the folowing:
 ```bash
 python3 train_vae.py --generative-model CVAE --dataset Kimore --output-directory results/ --runs 5 --weight-rec 0.9 --weight-kl 1e-3 --epochs 2000 --device cuda
 
@@ -48,11 +46,11 @@ python3 train_vae.py --generative-model CVAE --dataset Kimore --output-directory
 - `` runs = int``: number of times to train the model.
 
 #### Device
-- ``Device=cuda``: training with CUDA, on an automatically selected GPU (default)
+- ``Device=cuda``: training with CUDA, on an automatically selected GPU (default).
 - ``Device=mps``: training with MPS, training on GPU for MacOS devices with Metal programming framework.
-- ``Device=cpu``: training on the CPU (not recommended)
+- ``Device=cpu``: training on the CPU.
 
-
+## Evaluation with the metrics:
 
 
 
