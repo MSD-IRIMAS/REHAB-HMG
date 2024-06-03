@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
-from model.CVAE import CVAE
+from model.CVAEE import CVAEE
 from torch.utils.data import DataLoader
 import torch
 
@@ -19,7 +19,7 @@ def get_args():
         '--generative-model',
         help="Which generative model to use .",
         type=str,
-        choices=['CVAE','CVA'],
+        choices=['CVAE','CVAEE'],
         default='CVAE',
     )
 
@@ -108,8 +108,8 @@ if __name__ == "__main__":
             output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
             create_directory(output_directory_run)
 
-            if args.generative_model == 'CVAE':
-                generator = CVAE(output_directory=output_directory_run,
+            if args.generative_model == 'CVAEE':
+                generator = CVAEE(output_directory=output_directory_run,
                 epochs=args.epochs,
                 device=args.device,
                                
