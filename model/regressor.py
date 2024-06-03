@@ -13,7 +13,7 @@ class Regressor(nn.Module):
             self.epochs = epochs
             self.filters = filters
             self.lr = lr
-            self.conv1 = nn.Conv1d(54, self.filters, kernel_size=120)
+            self.conv1 = nn.Conv1d(54, self.filters, kernel_size=70)
             self.conv2 = nn.Conv1d(self.filters,self.filters,kernel_size=60)
             self.conv3 = nn.Conv1d(self.filters,self.filters,kernel_size=30)
             self.conv4 = nn.Conv1d(self.filters,self.filters,kernel_size=15)

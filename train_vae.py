@@ -8,7 +8,6 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
 from model.CVAE import CVAE
-from model.cvae2 import CVA
 from torch.utils.data import DataLoader
 import torch
 
@@ -121,21 +120,13 @@ if __name__ == "__main__":
                                 )
 
             
-                generator.train_function(dataloader,device)
-                generator.visualize_latent_space(dataloader,device)       
-                generator.generate_samples(device,class_index=0)      
-            if args.generative_model == 'CVAE':
-                generator = CVA(output_directory=output_directory_run,
-                epochs=args.epochs,
-                device=args.device,
-                               
-                                
-                                w_rec=args.weight_rec,
-                                w_kl=args.weight_kl,
-
-                                )
-
-            
                 generator.train_function(dataloader,device=args.device)
-                generator.visualize_latent_space(dataloader,device=args.device)       
-                generator.generate_samples(device=args.device,class_index=0)      
+                generator.visualize_latent_space(dataloader,device=args.device)
+
+#SEPARATE THE GENERATION PROCESS OF THE TRAINING      
+# SAVE THE EONCODER AND DECODER SEPARATLY 
+                generator.generate_samples(device = args.device,class_index=0)      
+                generator.generate_samples(device=args.device,class_index=1)
+                generator.generate_samples(device=args.device,class_index=2)
+                generator.generate_samples(device=args.device,class_index=3)
+                generator.generate_samples(device=args.device,class_index=4)      
