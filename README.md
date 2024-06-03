@@ -9,7 +9,6 @@
 
 ## Installation :construction_worker:
 
-<summary>Click to expand</summary>
 
 ### Create conda environment
 
