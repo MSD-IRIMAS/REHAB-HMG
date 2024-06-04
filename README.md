@@ -32,10 +32,10 @@ The code was tested on Python 3.10.13 and PyTorch 2.2
 </details>
 
 
-## How to generate motions:
+## How to Train the network:
 
 
-The command to launch a training experiment and generating skeletons is the folowing:
+The command to launch a training experiment is the folowing:
 ```bash
 python3 train_vae.py --generative-model CVAE --dataset Kimore --output-directory results/ --runs 5 --weight-rec 0.9 --weight-kl 1e-3 --epochs 2000 --device cuda
 
@@ -49,6 +49,14 @@ python3 train_vae.py --generative-model CVAE --dataset Kimore --output-directory
 - ``Device=cuda``: training with CUDA, on an automatically selected GPU (default).
 - ``Device=mps``: training with MPS, training on GPU for MacOS devices with Metal programming framework.
 - ``Device=cpu``: training on the CPU.
+## How to generate skeletons:
+The command to launch a generation experiment is the folowing:
+```bash
+python3 generate_samples.py --generative-model CVAE --dataset Kimore --output-directory results/ --device cuda --class_index 0
+
+```
+#### class_index
+- `` class_index = int``: chich class you want to generate from.
 
 ## Evaluation with the metrics:
 
