@@ -8,6 +8,7 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
 from model.CVAEE import CVAEE
+from model.CVAE import CVAE
 from torch.utils.data import DataLoader
 import torch
 
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     dataset_dir = 'data/' + args.dataset + '/'
     data,labels,scores = load_data(root_dir=dataset_dir)
     dataset = Kimore(data,labels,scores)
-    dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
+    dataloader = DataLoader(dataset,batch_size=16,shuffle = True,drop_last=True)
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu" )
 
     for _run in range(args.runs):
@@ -108,8 +109,8 @@ if __name__ == "__main__":
             output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
             create_directory(output_directory_run)
 
-            if args.generative_model == 'CVAEE':
-                generator = CVAEE(output_directory=output_directory_run,
+            if args.generative_model == 'CVAE':
+                generator = CVAE(output_directory=output_directory_run,
                 epochs=args.epochs,
                 device=args.device,
                                
@@ -129,4 +130,20 @@ if __name__ == "__main__":
                 generator.generate_samples(device=args.device,class_index=1)
                 generator.generate_samples(device=args.device,class_index=2)
                 generator.generate_samples(device=args.device,class_index=3)
-                generator.generate_samples(device=args.device,class_index=4)      
+                generator.generate_samples(device=args.device,class_index=4) 
+            elif args.generative_model == 'CVAEE':
+                generator = CVAEE(output_directory=output_directory_run,
+                epochs=args.epochs,
+                device=args.device,
+                w_rec=args.weight_rec,
+                w_kl=args.weight_kl,
+
+                                )
+
+            
+                generator.train_function(dataloader,device=args.device)
+                generator.visualize_latent_space(dataloader,device=args.device)
+
+#SEPARATE THE GENERATION PROCESS OF THE TRAINING      
+# SAVE THE EONCODER AND DECODER SEPARATLY 
+  
