@@ -1,7 +1,9 @@
 import torch
 import numpy as np
+import sys
+sys.path.append('/home/hferrar/HMG/utils')
 from torch.utils.data import Subset, Dataset,DataLoader
-from utils.normalize import normalize_skeletons,normalize_scores
+from normalize import normalize_skeletons,normalize_scores
 
 class Kimore(Dataset):
     def __init__(self,data,labels,scores,transform=None):
@@ -29,9 +31,9 @@ def load_data(root_dir):
 def load_class(class_index,root_dir):
     data,labels,scores = load_data(root_dir)
     if class_index == 0:
-        data = data[:70]
-        labels = labels[:70]
-        scores = scores[:70]
+        data = data[:71]
+        labels = labels[:71]
+        scores = scores[:71]
     elif class_index == 1:
         data = data[71:141]
         labels = labels[71:141]
