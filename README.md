@@ -1,7 +1,7 @@
 <div align="center">
 
 # HMG: Human Motion Generation
-## Generating diverse Rehabilitation human motions from textual descriptions with a score.
+## Generating diverse Rehabilitation human motions with a score.
 
 </div>
 
