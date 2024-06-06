@@ -28,7 +28,7 @@ def create_directory(directory_name):
 def plot_limbs(ax, jointsX, jointsY, jointsZ):
     '''plot_limbs function tries to draw links between joints.
     Must check that the joint pairs  is correct.'''
-    joint_pairs = [(2,3),(3,4),(4,5),(5,6),(12,13),(11,12),(0,11),(0,14),(14,15),(15,16),(7,8),(8,9),(9,10),(17,7),(2,1),(1,0),(3,17),(2,17)
+    joint_pairs = [(3,4),(4,5),(5,6),(12,13),(11,12),(0,11),(0,14),(14,15),(15,16),(7,8),(8,9),(9,10),(17,7),(2,1),(1,0),(3,17),(2,17)
     ]
     for joint_pair in joint_pairs:
         indexes = list(joint_pair)
@@ -42,7 +42,7 @@ def plot_skel(x,output_directory,title):
     # x=reshape_npy_array(x)
     seq=x[0]
 
-    out_root_dir = output_directory+'Viz/'
+    out_root_dir = output_directory
     out_pngs_dir = out_root_dir + 'pngs/'
     out_gifs_dir = out_root_dir 
     create_directory(out_pngs_dir)
