@@ -5,79 +5,81 @@ import torch.nn.functional as F
 import torchvision
 import pandas as pd
 from torch.autograd import Variable
-
-class Regressor(nn.Module):
-        def __init__(self,output_directory,epochs,device,filters=128,lr=1e-4):
-            super(Regressor,self).__init__()
-            self.output_directory = output_directory
-            self.epochs = epochs
-            self.filters = filters
-            self.lr = lr
-            self.conv1 = nn.Conv1d(54, self.filters, kernel_size=70)
-            self.conv2 = nn.Conv1d(self.filters,self.filters,kernel_size=60)
-            self.conv3 = nn.Conv1d(self.filters,self.filters,kernel_size=30)
-            self.conv4 = nn.Conv1d(self.filters,self.filters,kernel_size=15)
-            self.conv5 = nn.Conv1d(self.filters,self.filters,kernel_size=5)
-            self.relu = nn.ReLU()
-            self.linear0 = nn.Linear(self.filters*523,256)
-            self.linear1 = nn.Linear(256,64)
-            self.linear2 = nn.Linear(64,1)
-
-        def forward(self,x):
-                x = x.view(x.size(0),x.size(1),-1)
-                x = x.permute(0,2,1)
-                x = self.relu(self.conv1(x))  
-                x = self.relu(self.conv2(x))   
-                x = self.relu(self.conv3(x))
-                x = self.relu(self.conv4(x))
-                x = self.relu(self.conv5(x))
-                x = x.view(x.size(0), -1)
-                x = self.relu(self.linear0(x))
-                x = self.relu(self.linear1(x))
-                x = self.linear2(x)
-                return x
-
-        def train_regressor(self,optimizer, epochs, device, train_loader,test_loader):
-            train_losses = []
-            test_losses = []
-            criterion = nn.MSELoss()
-            min_loss = float('inf')
-            for epoch in range(epochs):
-                self.train()
-
-                train_loss = 0.0
-                for batch_idx, (data, score) in enumerate(train_loader):
-                    data = data.to(self.device)
-                    score = score.to(self.device)
-                    optimizer.zero_grad()
-                    output = self(data)
-                    score = score.view_as(output)
-                    loss = criterion(output, score)
-                    loss.backward()
-                    optimizer.step()
-                    train_loss += loss.item()
-                
-                train_loss /= len(train_loader.dataset)
-                train_losses.append(train_loss)
-                self.eval()
-                test_loss = 0.0
-                with torch.no_grad():
-                    for data, score in test_loader:
-                        data = data.to(self.device)
-                        score = score.to(self.device)    
-                        output = self(data)
-                        score = score.view_as(output)
-                        loss = criterion(output, score)
-                        test_loss += loss.item()
-
-                test_loss /= len(test_loader.dataset)
-                test_losses.append(test_loss)
-                print(f"Epoch {epoch+1}/{self.epochs}, Train Loss: {train_loss:.6f}, Test Loss: {test_loss:.6f}")
-                if test_loss < min_loss:
-                    min_loss = test_loss
-                    torch.save(self.state_dict(), os.path.join(self.output_directory, 'best_regressor.pth'))
+from aeon.regression.distance_based import KNeighborsTimeSeriesRegressor
+import sys
+sys.path.append('/home/hferrar/HMG/dataset')
+sys.path.append('/home/hferrar/HMG/urils')
+from dataset import load_class
+from normalize import normalize_skeletons
+from aeon.distances import dtw_distance
+from fastdtw import fastdtw
 
 
-            plot_regressor_loss(self.epochs,train_loss,test_loss,self,output_directory)
+X_train = np.load('/home/hferrar/HMG/results/run_0/generated_samples/class_0/generated_samples.npy')
+print(X_train.shape)
+y_train = np.load('/home/hferrar/HMG/results/run_0/generated_samples/class_0/true_scores.npy')
+X_train = np.reshape(X_train, (X_train.shape[0], 748, 18*3))
+data,labels,scores = load_class(0,root_dir='/home/hferrar/HMG/data/Kimore/')
+data = normalize_skeletons(data)
+print(data.shape)
+X_test = np.reshape(data, (data.shape[0], data.shape[1], 18*3))
 
-        
+
+
+def calculate_dtw(xtrain,xtest):
+    for i in range(len(xtrain)):
+        for j in range(len(xtest)):
+            distance = dtw_distance(xtrain[i, :, :], xtest[j, :, :])
+            print("DTW distance for generated sample", i,"and true sample",j,"is: ", distance)
+
+
+def calculate_dtw_and_save_results(xtrain, xtest, output_file,ytrain):
+    with open(output_file, 'w') as f:
+        for i in range(len(xtrain)):
+            min_distance = float('inf')
+            min_index = None
+            for j in range(len(xtest)):
+                distance = dtw_distance(xtrain[i, :, :], xtest[j, :, :])
+                f.write(f"DTW distance for generated sample {i}  and true sample {j} is: {distance}\n")
+                if distance < min_distance:
+                    min_distance = distance
+                    min_index = j
+            f.write(f"Minimal DTW distance for generated sample {i} with score {ytrain[i]} is: {min_distance} "
+                    f"(achieved with true sample {min_index}) with score {ytrain[min_index]} \n")
+
+
+calculate_dtw_and_save_results(X_train, X_test, '/home/hferrar/HMG/results/dtw_results.txt',y_train)
+# print(y_train)
+# print('--------------------------------------------')
+# X_train = np.transpose(X_train, (0, 2, 1))
+# X_test = np.transpose(X_test, (0, 2, 1))
+# reg = KNeighborsTimeSeriesRegressor(distance='dtw')
+# reg.fit(X_train,y_train)
+# pred=reg.predict(X_test)
+# print(pred)
+
+
+
+# calculate_dtw(X_train,X_test)
+
+def write_min_distance_info(file_path, sample_index, min_index, ytrain):
+    with open(file_path, 'a') as f:
+        f.write(f"Minimal DTW distance for generated sample {sample_index} with score {ytrain[sample_index]}  "
+                f"achieved with true sample {min_index} with score {ytrain[min_index]} \n")
+
+def calculate_dtw_and_save_results(xtrain, xtest, output_file, ytrain, min_distance_file):
+    with open(output_file, 'w') as f:
+        for i in range(len(xtrain)):
+            min_distance = float('inf')
+            min_index = None
+            for j in range(len(xtest)):
+                distance = dtw_distance(xtrain[i, :, :], xtest[j, :, :])
+                f.write(f"DTW distance for generated sample {i} and true sample {j} is: {distance}\n")
+                if distance < min_distance:
+                    min_distance = distance
+                    min_index = j
+            f.write(f"Minimal DTW distance for generated sample {i} with score {ytrain[i]} is: {min_distance}\n")
+            write_min_distance_info(min_distance_file, i, min_index, ytrain)
+
+# Example usage
+calculate_dtw_and_save_results(X_train, X_test, '/home/hferrar/HMG/results/dtw_results.txt',y_train, '/home/hferrar/HMG/results/min_distance_file.txt')

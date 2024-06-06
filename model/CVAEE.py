@@ -222,59 +222,59 @@ class CVAEE(nn.Module):
         return generated_sample
     
 
-    def generate_samples(self,device,class_index,gif_directory,dataloader):
-        n_components = 1
+    # def generate_samples(self,device,class_index,gif_directory,dataloader):
+    #     n_components = 1
 
-        gmm = GaussianMixture(n_components=n_components)
-        self.device =device
-        self.to(device)
-        self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
-        encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
-        z_list = []
-        for data, label, score_value in dataloader: 
-            data = data.to(device)
-            label = torch.tensor(label, dtype=torch.long).to(device)
-            label = F.one_hot(label, num_classes=self.num_classes)
-            score = score_value.to(device) 
-            with torch.no_grad():
-                z_mu, z_logvar = self.encoder(data,label)
-                z = self.reparameterize(z_mu,z_logvar)
-                z_list.append(z)
-        z_all = torch.cat(z_list, dim=0).cpu().numpy()
-        # mean_z = torch.mean(z_all, dim=0, keepdim=True).to(device)
-        gm = gmm.fit(z_all)
-        means = np.asarray(gm.means_).reshape((self.latent_dimension,))
-        covariances = np.asarray(gm.covariances_).reshape((self.latent_dimension, self.latent_dimension))
+    #     gmm = GaussianMixture(n_components=n_components)
+    #     self.device =device
+    #     self.to(device)
+    #     self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
+    #     encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
+    #     z_list = []
+    #     for data, label, score_value in dataloader: 
+    #         data = data.to(device)
+    #         label = torch.tensor(label, dtype=torch.long).to(device)
+    #         label = F.one_hot(label, num_classes=self.num_classes)
+    #         score = score_value.to(device) 
+    #         with torch.no_grad():
+    #             z_mu, z_logvar = self.encoder(data,label)
+    #             z = self.reparameterize(z_mu,z_logvar)
+    #             z_list.append(z)
+    #     z_all = torch.cat(z_list, dim=0).cpu().numpy()
+    #     # mean_z = torch.mean(z_all, dim=0, keepdim=True).to(device)
+    #     gm = gmm.fit(z_all)
+    #     means = np.asarray(gm.means_).reshape((self.latent_dimension,))
+    #     covariances = np.asarray(gm.covariances_).reshape((self.latent_dimension, self.latent_dimension))
         
-        sample = np.random.multivariate_normal(mean=means,cov=covariances, size=1)
-        sample = torch.tensor(sample,dtype=torch.float32).to(device)
-        # sample = torch.randn(1, self.latent_dimension).to(device)
-        ex1_scores =[60.0, 90.83333, 100.0, 90.0, 84.16667, 76.66667, 97.5, 80.0, 100.0, 82.5, 92.5, 
-                    77.5, 100.0, 75.0, 92.5, 75.0, 80.0, 97.5, 92.5, 74.16667, 85.83333, 77.5, 
-                    70.0, 87.5, 90.0, 81.66667, 85.0, 100.0, 100.0, 100.0, 90.0, 86.66667,92.5,
-                    95.83333, 90.83333, 95.83333, 98.33333, 100.0, 100.0, 91.66667, 40.0, 40.83333, 41.66667, 85.0, 
-                    42.5, 59.16667, 65.0, 71.02688, 60.0, 75.0,57.5, 42.5, 44.16667, 95.0, 65.0, 
-                    10.0, 100.0, 11.66667, 55.0, 66.66667, 60.77045, 100.0, 67.5, 64.16667, 77.5, 58.34933, 
-                    70.0, 75.83333, 85.83333, 88.33333, 45.5252]
-        generated_samples = []
-        generated_samples_unnormalized =[]
-        generated_scores = []
-        for score_value in ex1_scores:
-            score = torch.tensor([score_value/100.0]).unsqueeze(1).to(device)
-            c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
-            with torch.no_grad():
-                generated_sample = self.decoder(sample, c, score).cpu().double().numpy()
-                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
-            generated_samples.append(generated_sample)
-            generated_samples_unnormalized.append(unnormalized_sample)
-        generated_samples_array = np.array(generated_samples)
-        generated_samples_unnormalized = np.array(generated_samples_unnormalized)
-        scores_array = np.array(ex1_scores)
+    #     sample = np.random.multivariate_normal(mean=means,cov=covariances, size=1)
+    #     sample = torch.tensor(sample,dtype=torch.float32).to(device)
+    #     # sample = torch.randn(1, self.latent_dimension).to(device)
+    #     ex1_scores =[60.0, 90.83333, 100.0, 90.0, 84.16667, 76.66667, 97.5, 80.0, 100.0, 82.5, 92.5, 
+    #                 77.5, 100.0, 75.0, 92.5, 75.0, 80.0, 97.5, 92.5, 74.16667, 85.83333, 77.5, 
+    #                 70.0, 87.5, 90.0, 81.66667, 85.0, 100.0, 100.0, 100.0, 90.0, 86.66667,92.5,
+    #                 95.83333, 90.83333, 95.83333, 98.33333, 100.0, 100.0, 91.66667, 40.0, 40.83333, 41.66667, 85.0, 
+    #                 42.5, 59.16667, 65.0, 71.02688, 60.0, 75.0,57.5, 42.5, 44.16667, 95.0, 65.0, 
+    #                 10.0, 100.0, 11.66667, 55.0, 66.66667, 60.77045, 100.0, 67.5, 64.16667, 77.5, 58.34933, 
+    #                 70.0, 75.83333, 85.83333, 88.33333, 45.5252]
+    #     generated_samples = []
+    #     generated_samples_unnormalized =[]
+    #     generated_scores = []
+    #     for score_value in ex1_scores:
+    #         score = torch.tensor([score_value/100.0]).unsqueeze(1).to(device)
+    #         c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
+    #         with torch.no_grad():
+    #             generated_sample = self.decoder(sample, c, score).cpu().double().numpy()
+    #             unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+    #             # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
+    #         generated_samples.append(generated_sample)
+    #         generated_samples_unnormalized.append(unnormalized_sample)
+    #     generated_samples_array = np.array(generated_samples)
+    #     generated_samples_unnormalized = np.array(generated_samples_unnormalized)
+    #     scores_array = np.array(ex1_scores)
  
-        np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
-        np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
-        np.save(os.path.join(gif_directory,'true_scores.npy'), scores_array)
+    #     np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
+    #     np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
+    #     np.save(os.path.join(gif_directory,'true_scores.npy'), scores_array)
   
 
 
@@ -292,65 +292,38 @@ class CVAEE(nn.Module):
 
 
 
+    def generate_samples(self, device, class_index, gif_directory, dataloader):
+        self.device = device
+        self.to(device)
+        self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
+        encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
+        generated_samples = []
+        generated_samples_unnormalized = []
+        generated_scores = []
+        for data, label, score_value in dataloader: 
+            data = data.to(device)
+            label = torch.tensor(label, dtype=torch.long).to(device)
+            label = F.one_hot(label, num_classes=self.num_classes)
+            score = score_value.to(device) 
+            with torch.no_grad():
+                z_mu, z_logvar = self.encoder(data,label)
+                z = self.reparameterize(z_mu,z_logvar)
+                # c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
 
+                generated_sample = self.decoder(z, label, score).cpu().double().detach().numpy()
+                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                        # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
 
+                generated_samples.append(generated_sample)
+                generated_samples_unnormalized.append(unnormalized_sample)
+                generated_scores.append(score_value)
 
-
-# # Find the component with the highest probability for each sample
-# labels = gmm.predict(z_all)
-
-# # Compute the mean or mode of the component with the highest probability
-# summary_index = labels.argmax()  # Find the index of the component with the highest probability
-# summary_z = gmm.means_[summary_index]
-
-
-
-
-
-
-
-
-
-    # def generate_samples(self, device, class_index, gif_directory, dataloader):
-    #     self.device = device
-    #     self.to(device)
-    #     self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
-    #     encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
-    #     generated_samples = []
-    #     generated_samples_unnormalized = []
-    #     generated_scores = []
-    #     ex1_scores = [60.0, 90.83333, 100.0, 90.0, 84.16667, 76.66667, 97.5, 80.0, 100.0, 82.5, 92.5, 77.5, 100.0, 75.0, 92.5, 
-    #      75.0, 80.0, 97.5, 92.5, 74.16667, 85.83333, 77.5, 70.0, 87.5, 90.0, 81.66667, 85.0, 100.0, 100.0, 100.0, 90.0, 86.66667,
-    #       92.5, 95.83333, 90.83333, 95.83333, 98.33333, 100.0, 100.0, 91.66667, 40.0, 40.83333, 41.66667, 85.0, 42.5, 59.16667, 65.0, 71.02688, 60.0, 75.0,
-    #       57.5, 42.5, 44.16667, 95.0, 65.0, 10.0, 100.0, 11.66667, 55.0, 66.66667, 60.77045, 100.0, 67.5, 64.16667, 77.5, 58.34933, 70.0, 75.83333, 85.83333, 88.33333, 45.5252]
-    #     for data, label, score_value in dataloader: 
-    #         data = data.to(device)
-    #         label = torch.tensor(label, dtype=torch.long).to(device)
-    #         label = F.one_hot(label, num_classes=self.num_classes)
-    #         score = score_value.to(device) 
-           
-    #         with torch.no_grad():
-    #             z_mu, z_logvar = self.encoder(data,label)
-    #             z = self.reparameterize(z_mu,z_logvar)
-    #     c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
-    #     for score_value in ex1_scores:
-    #         score = torch.tensor([score_value/100.00]).unsqueeze(1).to(device)
-    #         print(score.dtype)
-    #         with torch.no_grad():
-    #             generated_sample = self.decoder(z, c, score_value).cpu().double().detach().numpy()
-    #             unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-    #                     # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
-
-    #             generated_samples.append(generated_sample)
-    #             generated_samples_unnormalized.append(unnormalized_sample)
-    #             generated_scores.append(score_value)
-
-    #     generated_samples_array = np.concatenate(generated_samples, axis=0)
-    #     generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
-    #     scores_array = np.array(generated_scores)
+        generated_samples_array = np.concatenate(generated_samples, axis=0)
+        generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
+        # scores_array = np.array(generated_scores)
         
-    #     np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
-    #     np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
-    #     np.save(os.path.join(gif_directory,'true_scores.npy'), scores_array)
+        np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
+        np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
+        # np.save(os.path.join(gif_directory,'true_scores.npy'), scores_array)
 
 
