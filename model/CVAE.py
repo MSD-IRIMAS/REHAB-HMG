@@ -223,7 +223,7 @@ class CVAE(nn.Module):
 
     def generate_samples(self,device,class_index):
         sample = torch.randn(1, self.latent_dimension).to(device)
-        score_values = [0, 0.1 ,0.2 ,0.25 ,0.3 ,0.388 ,0.4 ,0.5 ,0.55 ,0.6 ,0.677 ,0.7 ,0.8 ,0.833 ,0.85 ,0.875 ,0.9 ,0.955 ,0.97 ,1.0]  
+        score_values = [0, 0.1 ,0.2  ,0.3  ,0.4 ,0.5  ,0.6 ,0.677 ,0.7 ,0.8  ,0.875 ,0.9 ,1.0]  
         generated_samples = []
         generated_scores = []
         for score_value in score_values:
@@ -232,12 +232,12 @@ class CVAE(nn.Module):
             with torch.no_grad():
                 generated_sample = self.decode(sample, c, score).cpu().double().numpy()
                 unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                plot_skel(unnormalized_sample,self.output_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
+                plot_skel(unnormalized_sample,self.output_directory,title='ex_'+str(class_index)+'_score='+str(score_value))
             generated_samples.append(generated_sample)
         generated_samples_array = np.array(generated_samples)
         scores_array = np.array(score_values)
  
-        np.save(os.path.join(self.output_directory,'generated_samples.npy'), generated_samples_array)
+        np.save(os.path.join(self.output_directory,'generated_samples_'+str(class_index)+'.npy'), generated_samples_array)
         np.save(os.path.join(self.output_directory,'true_scores.npy'), scores_array)
 
 
