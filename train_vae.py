@@ -7,9 +7,9 @@ import numpy as np
 import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
-from model.CVAEE import CVAEE
+from sklearn.model_selection import train_test_split
 from model.CVAE import CVAE
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader,Subset
 import torch
 
 def get_args():
@@ -73,6 +73,20 @@ def get_args():
         default='cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu')
     )
 
+    parser.add_argument(
+        '--data_split',
+        help="choose wether split the data or use it all",
+        type=str,
+        choices=['all', 'split'],
+        default='split'
+    )
+    parser.add_argument(
+        '--class_index',
+        help="which class to generate from",
+        type=int,
+        default=0
+    )
+
     args = parser.parse_args()
 
     return args
@@ -96,54 +110,45 @@ if __name__ == "__main__":
     output_directory_weights_losses = output_directory_generator + 'Wrec_' + str(args.weight_rec) + '_Wkl_' + str(args.weight_kl) + '/'
     create_directory(output_directory_weights_losses)
 
-
-
     dataset_dir = 'data/' + args.dataset + '/'
     data,labels,scores = load_data(root_dir=dataset_dir)
     dataset = Kimore(data,labels,scores)
-    dataloader = DataLoader(dataset,batch_size=16,shuffle = True,drop_last=True)
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu" )
+    train_indices, test_indices = train_test_split(range(len(dataset)), test_size=0.2, random_state=42)
+    train_dataset = Subset(dataset, train_indices)
+    test_dataset = Subset(dataset, test_indices)
+    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+    dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
 
-    for _run in range(args.runs):
+    if args.data_split == 'all':
+        for _run in range(args.runs):
 
-            output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
-            create_directory(output_directory_run)
+                output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
+                create_directory(output_directory_run)
 
-            if args.generative_model == 'CVAE':
-                generator = CVAE(output_directory=output_directory_run,
-                epochs=args.epochs,
-                device=args.device,
-                               
-                                
-                                w_rec=args.weight_rec,
-                                w_kl=args.weight_kl,
+                if args.generative_model == 'CVAE':
+                    generator = CVAE(output_directory=output_directory_run,
+                    epochs=args.epochs,
+                    device=args.device,
+                    w_rec=args.weight_rec,
+                    w_kl=args.weight_kl)
+                    generator.train_function(dataloader,device=args.device)
+                    generator.visualize_latent_space(dataloader,device=args.device)
+                    generator.generate_samples(device = args.device,class_index=args.class_index)      
+    elif args.data_split == 'split':
+        for _run in range(args.runs):
 
-                                )
+                output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
+                create_directory(output_directory_run)
 
-            
-                generator.train_function(dataloader,device=args.device)
-                generator.visualize_latent_space(dataloader,device=args.device)
+                if args.generative_model == 'CVAE':
+                    generator = CVAE(output_directory=output_directory_run,
+                    epochs=args.epochs,
+                    device=args.device,
+                    w_rec=args.weight_rec,
+                    w_kl=args.weight_kl)
+                    generator.train_function(train_loader,device=args.device)
+                    generator.visualize_latent_space(train_loader,device=args.device)
+                    # generator.generate_samples(device = args.device,class_index=args.class_index)    
 
-#SEPARATE THE GENERATION PROCESS OF THE TRAINING      
-# SAVE THE EONCODER AND DECODER SEPARATLY 
-                generator.generate_samples(device = args.device,class_index=0)      
-                generator.generate_samples(device=args.device,class_index=1)
-                generator.generate_samples(device=args.device,class_index=2)
-                generator.generate_samples(device=args.device,class_index=3)
-                generator.generate_samples(device=args.device,class_index=4) 
-            elif args.generative_model == 'CVAEE':
-                generator = CVAEE(output_directory=output_directory_run,
-                epochs=args.epochs,
-                device=args.device,
-                w_rec=args.weight_rec,
-                w_kl=args.weight_kl,
 
-                                )
-
-            
-                generator.train_function(dataloader,device=args.device)
-                generator.visualize_latent_space(dataloader,device=args.device)
-
-#SEPARATE THE GENERATION PROCESS OF THE TRAINING      
-# SAVE THE EONCODER AND DECODER SEPARATLY 
-  

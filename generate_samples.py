@@ -7,11 +7,10 @@ import numpy as np
 import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data,load_class
-from model.CVAEE import CVAEE
-from torch.utils.data import DataLoader
+from model.CVAE import CVAE
+from torch.utils.data import DataLoader,Subset
 import torch
-
-
+from sklearn.model_selection import train_test_split
 def get_args():
 
     parser = argparse.ArgumentParser()
@@ -84,8 +83,6 @@ if __name__ == "__main__":
     args = get_args()
 
 
-
-
     output_directory_results = args.output_directory
     output_directory_gen_models = output_directory_results + 'Generative_models/'
 
@@ -107,19 +104,22 @@ if __name__ == "__main__":
 
     output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
     create_directory(output_directory_skeletons_class)
-    dataset_dir = 'data/' + args.dataset + '/'
-    data,labels,scores = load_class(class_index =0,root_dir=dataset_dir)
-    dataset = Kimore(data,labels,scores)
-    dataloader = DataLoader(dataset,batch_size=16,shuffle=False)
 
-    generator = CVAEE(output_directory=output_directory_run,
+
+    dataset_dir = 'data/' + args.dataset + '/'
+    data,labels,scores = load_class(class_index =args.class_index,root_dir=dataset_dir)
+    dataset = Kimore(data,labels,scores)
+    train_indices, test_indices = train_test_split(range(len(dataset)), test_size=0.2, random_state=42)
+    test_dataset = Subset(dataset, test_indices)
+    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+
+
+    generator = CVAE(output_directory=output_directory_run,
                 epochs=args.epochs,
                 device=args.device,
                 w_rec=weights_loss['Wrec'],
                 w_kl=weights_loss['Wkl'])
    
 
-    generator.generate_samples(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=dataloader)
-
-
-    ####--------------ADD the regressor
+    # generator.generate_samples_from_posterior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)
+    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)
