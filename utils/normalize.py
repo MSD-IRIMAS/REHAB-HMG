@@ -26,7 +26,7 @@ def normalize_skeletons(X, min_X=None, max_X=None, min_Y=None, max_Y=None, min_Z
     n_X[:,:,:,1] = (X[:,:,:,1] - min_Y) / (1.0 * (max_Y - min_Y))
     n_X[:,:,:,2] = (X[:,:,:,2] - min_Z) / (1.0 * (max_Z - min_Z))
 
-    np.savez('data/min_max_values.npz', min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, min_Z=min_Z, max_Z=max_Z)
+    # np.savez('data/min_max_values.npz', min_X=min_X, max_X=max_X, min_Y=min_Y, max_Y=max_Y, min_Z=min_Z, max_Z=max_Z)
     return n_X
 
 
@@ -48,13 +48,9 @@ def unnormalize_generated_skeletons(X_normalized):
 
 
 
-def normalize_scores(scores,min_score=None,max_score=None):
+def normalize_scores(scores):
     normalized_scores = np.zeros_like(scores)
-    if min_score is None:
-        min_score = np.min(scores)
-    if max_score is None:
-        max_score = np.max(scores)
-    normalized_scores = (scores - min_score) / (max_score - min_score)
-    np.savez('data/min_max_score.npz',min_score=min_score,max_score=max_score)
+   
+    normalized_scores = scores / 100.0
     return normalized_scores
 
