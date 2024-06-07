@@ -28,6 +28,7 @@ def load_data(root_dir):
     labels = np.load(root_dir+'labels.npy')
     scores = np.load(root_dir+'scores.npy')
     return data,labels,scores
+    
 def load_class(class_index,root_dir):
     data,labels,scores = load_data(root_dir)
     if class_index == 0:
@@ -35,9 +36,9 @@ def load_class(class_index,root_dir):
         labels = labels[:71]
         scores = scores[:71]
     elif class_index == 1:
-        data = data[71:141]
-        labels = labels[71:141]
-        scores = scores[71:141]
+        data = data[71:142]
+        labels = labels[71:142]
+        scores = scores[71:142]
     elif class_index == 2:
         data = data[142:213]
         labels = labels[142:213]
@@ -47,11 +48,10 @@ def load_class(class_index,root_dir):
         labels = labels[213:284]
         scores = scores[213:284]
     elif class_index == 4:
-        data = data[285:355]
-        labels = labels[285:355]
-        scores = scores[285:355]
+        data = data[284:355]
+        labels = labels[284:355]
+        scores = scores[284:355]
     return data,labels,scores
-
 
 
 
