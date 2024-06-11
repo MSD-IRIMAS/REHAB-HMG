@@ -1,0 +1,7 @@
+torchvisison = 0.17
+numpy
+imageio
+pandas
+seaborn
+matplotlib
+scikit-learn
