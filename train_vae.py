@@ -8,7 +8,8 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
 from sklearn.model_selection import train_test_split
-from model.CVAE import CVAE
+from model.cvae import CVAE
+from model.cvae_label import CVAEL
 from torch.utils.data import DataLoader,Subset
 import torch
 
@@ -20,7 +21,7 @@ def get_args():
         '--generative-model',
         help="Which generative model to use .",
         type=str,
-        choices=['CVAE','CVAEE'],
+        choices=['CVAE','CVAEL'],
         default='CVAE',
     )
 
@@ -125,6 +126,11 @@ if __name__ == "__main__":
 
                 output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
+                output_directory_skeletons = output_directory_run + 'generated_samples/'
+                create_directory(output_directory_skeletons)
+
+                output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
+                create_directory(output_directory_skeletons_class)
 
                 if args.generative_model == 'CVAE':
                     generator = CVAE(output_directory=output_directory_run,
@@ -134,12 +140,17 @@ if __name__ == "__main__":
                     w_kl=args.weight_kl)
                     generator.train_function(dataloader,device=args.device)
                     generator.visualize_latent_space(dataloader,device=args.device)
-                    generator.generate_samples(device = args.device,class_index=args.class_index)      
+                    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
     elif args.data_split == 'split':
         for _run in range(args.runs):
 
                 output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
+                output_directory_skeletons = output_directory_run + 'generated_samples/'
+                create_directory(output_directory_skeletons)
+
+                output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
+                create_directory(output_directory_skeletons_class)
 
                 if args.generative_model == 'CVAE':
                     generator = CVAE(output_directory=output_directory_run,
@@ -147,8 +158,8 @@ if __name__ == "__main__":
                     device=args.device,
                     w_rec=args.weight_rec,
                     w_kl=args.weight_kl)
-                    generator.train_function(train_loader,device=args.device)
-                    generator.visualize_latent_space(train_loader,device=args.device)
-                    # generator.generate_samples(device = args.device,class_index=args.class_index)    
+                    # generator.train_function(train_loader,device=args.device)
+                    # generator.visualize_latent_space(train_loader,device=args.device)
+                    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
 
 
