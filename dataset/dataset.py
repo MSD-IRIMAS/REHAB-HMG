@@ -3,7 +3,7 @@ import numpy as np
 import sys
 sys.path.append('/home/hferrar/HMG/utils')
 from torch.utils.data import Subset, Dataset,DataLoader
-from normalize import normalize_skeletons,normalize_scores
+from utils.normalize import normalize_skeletons,normalize_scores
 
 class Kimore(Dataset):
     def __init__(self,data,labels,scores,transform=None):
