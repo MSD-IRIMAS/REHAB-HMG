@@ -9,7 +9,7 @@ def plot_latent_space(latent_2d,labels,title,output_directory):
     sns.scatterplot(data=df,x = "x",y="y",hue="label",palette="tab10",legend="full",alpha=0.8)
     plt.title(title)
     plt.savefig(output_directory + title+'.pdf')
-    plt.show()
+    # plt.show()
 
 def plot_loss(epochs, train_losses, train_recon_losses, train_kl_losses, output_directory):
     plt.plot(range(1, epochs + 1), train_losses, label='Total Loss')  
@@ -21,7 +21,8 @@ def plot_loss(epochs, train_losses, train_recon_losses, train_kl_losses, output_
     plt.legend()
     
     plt.savefig(os.path.join(output_directory, 'loss.pdf'))
-    plt.show()
+    plt.close()
+    # plt.show()
 def plot_regressor_loss(epochs,train_loss,test_loss,output_directory):
     plt.plot(range(1, epochs+1), train_loss, label='Train Loss')
     plt.plot(range(1, epochs+1), test_loss, label='test Loss')
@@ -29,4 +30,4 @@ def plot_regressor_loss(epochs,train_loss,test_loss,output_directory):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss Curve')
     plt.legend()
-    plt.show()
+    # plt.show()
