@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import argparse
 from utils.visualize import create_directory
-from dataset.dataset import Kimore, load_data
+from dataset.dataset import Kimore, load_class
 from sklearn.model_selection import train_test_split
 from model.cvae import CVAE
 from model.cvae_label import CVAEL
@@ -64,7 +64,7 @@ def get_args():
         '--epochs',
         help="Number of epochs to train the model.",
         type=int,
-        default=1000
+        default=2000
     )
     parser.add_argument(
         '--device',
@@ -112,14 +112,14 @@ if __name__ == "__main__":
     create_directory(output_directory_weights_losses)
 
     dataset_dir = 'data/' + args.dataset + '/'
-    data,labels,scores = load_data(root_dir=dataset_dir)
+    data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
     dataset = Kimore(data,labels,scores)
     train_indices, test_indices = train_test_split(range(len(dataset)), test_size=0.2, random_state=42)
     train_dataset = Subset(dataset, train_indices)
     test_dataset = Subset(dataset, test_indices)
     train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-    dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
+    # dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
 
     if args.data_split == 'all':
         for _run in range(args.runs):
@@ -138,9 +138,9 @@ if __name__ == "__main__":
                     device=args.device,
                     w_rec=args.weight_rec,
                     w_kl=args.weight_kl)
-                    generator.train_function(dataloader,device=args.device)
-                    generator.visualize_latent_space(dataloader,device=args.device)
-                    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
+                    # generator.train_function(dataloader,device=args.device)
+                    # generator.visualize_latent_space(dataloader,device=args.device)
+                    # generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
     elif args.data_split == 'split':
         for _run in range(args.runs):
 
@@ -149,17 +149,18 @@ if __name__ == "__main__":
                 output_directory_skeletons = output_directory_run + 'generated_samples/'
                 create_directory(output_directory_skeletons)
 
-                output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
+                output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
                 create_directory(output_directory_skeletons_class)
 
                 if args.generative_model == 'CVAE':
-                    generator = CVAE(output_directory=output_directory_run,
+                    generator = CVAE(output_directory=output_directory_skeletons_class,
                     epochs=args.epochs,
                     device=args.device,
                     w_rec=args.weight_rec,
                     w_kl=args.weight_kl)
                     # generator.train_function(train_loader,device=args.device)
                     # generator.visualize_latent_space(train_loader,device=args.device)
-                    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
+                    # generator.generate_samples_from_posterior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
+                    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
 
 

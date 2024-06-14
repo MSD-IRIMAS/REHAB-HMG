@@ -8,10 +8,10 @@ import os
 import sys
 sys.path.append('/home/hferrar/HMG/utils')
 from utils.visualize import create_directory
-from dataset.dataset import Kimore, load_data
+from dataset.dataset import Kimore, load_data,load_class
 from sklearn.model_selection import train_test_split
-from model.CVAE import CVAE
-from torch.utils.data import DataLoader, TensorDataset
+from model.cvae import CVAE
+from torch.utils.data import DataLoader, TensorDataset,Subset
 import torch
 
 def get_args():
@@ -60,20 +60,33 @@ def get_args():
     parser.add_argument(
         '--generative-model', 
         type=str, 
-        default='CVAE_cross', 
+        default='CVAE', 
         help="Which generative model to use.")
 
     args = parser.parse_args()
     return args
 
-def load_fold_data(fold_idx):
-    train_data = np.load(f'data/folds/train_data_fold{fold_idx}.npy')
-    train_labels = np.load(f'data/folds/train_labels_fold{fold_idx}.npy')
-    train_scores = np.load(f'data/folds/train_scores_fold{fold_idx}.npy')
-    test_data = np.load(f'data/folds/test_data_fold{fold_idx}.npy')
-    test_labels = np.load(f'data/folds/test_labels_fold{fold_idx}.npy')
-    test_scores = np.load(f'data/folds/test_scores_fold{fold_idx}.npy')
-    return train_data, train_labels, train_scores, test_data, test_labels, test_scores
+
+
+def load_indices(class_index,fold_idx):
+    
+
+    train_indices = np.load(f'data/folds_indexes/ex{class_index+1}/indexes_train_fold{fold_idx-1}.npy') 
+    test_indices = np.load(f'data/folds_indexes/ex{class_index+1}/indexes_test_fold{fold_idx-1}.npy') 
+    return train_indices,test_indices
+
+
+def create_dataloaders(data, labels, scores, train_idx, test_idx, batch_size):
+    train_data = Subset(Kimore(data, labels, scores), train_idx)
+    test_data = Subset(Kimore(data, labels, scores), test_idx)
+    
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+    
+    return train_loader, test_loader
+
+
+
 
 if __name__ == "__main__":
     args = get_args()
@@ -98,26 +111,29 @@ if __name__ == "__main__":
         create_directory(output_directory_run)
         output_directory_cross_val = output_directory_run+ 'cross_validation'+'/'
         create_directory(output_directory_cross_val)
-
-       
+        output_directory_fold_class = output_directory_cross_val + 'class_' + str(args.class_index) + '/'
+        create_directory(output_directory_fold_class)
 
         results = []
-
+        dataset_dir = 'data/' + args.dataset + '/'
+        data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
         for fold_idx in range(1, 6):
             print(f'Processing Fold {fold_idx}')
-            output_directory_fold = output_directory_cross_val + 'fold_' + str(fold_idx) + '/'
+            
+            output_directory_fold = output_directory_fold_class + 'fold_' + str(fold_idx) + '/'
             create_directory(output_directory_fold)
             output_directory_skeletons = output_directory_fold + 'generated_samples/'
             create_directory(output_directory_skeletons)
 
-            output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
-            create_directory(output_directory_skeletons_class)
+            
 
-            train_data, train_labels, train_scores, test_data, test_labels, test_scores = load_fold_data(fold_idx)
-            train_dataset = Kimore(train_data,train_labels,train_scores)
-            test_dataset = Kimore(test_data, test_labels, test_scores)
-            train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-            test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+            # train_data, train_labels, train_scores, test_data, test_labels, test_scores = load_fold_data(fold_idx)
+            # train_dataset = Kimore(train_data,train_labels,train_scores)
+            # test_dataset = Kimore(test_data, test_labels, test_scores)
+            # train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+            # test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+            train_indices,test_indices = load_indices(args.class_index,fold_idx)
+            train_loader, test_loader = create_dataloaders(data,labels,scores,train_indices,test_indices,batch_size=16 )
             
             if args.generative_model == 'CVAE':
                 generator = CVAE(output_directory=output_directory_fold,
@@ -125,14 +141,31 @@ if __name__ == "__main__":
                                  device=args.device,
                                  w_rec=args.weight_rec,
                                  w_kl=args.weight_kl)
-                generator.generate_samples_from_prior(args.device,args.class_index,output_directory_skeletons_class)
-                generator.generate_samples_from_posterior(args.device,args.class_index,output_directory_skeletons_class,test_loader)
+
                 
 
-        #         generator.train_function(train_loader, args.device)
-        #         test_loss = generator.evaluate_function(test_loader, args.device)
-        #         results.append(test_loss)
-        #         print(f'Fold {fold_idx} Test Loss: {test_loss}')
+                generator.train_function(train_loader, args.device)
+                test_loss = generator.evaluate_function(test_loader, args.device)
+                results.append(test_loss)
+                print(f'Fold {fold_idx} Test Loss: {test_loss}')
 
-        # average_test_loss = np.mean(results)
-        # print(f'Average Test Loss: {average_test_loss}')
+        average_test_loss = np.mean(results)
+        print(f'Average Test Loss: {average_test_loss}')
+
+
+
+                # generator.generate_samples_from_prior(args.device,args.class_index,output_directory_skeletons,test_loader)
+                # generator.generate_samples_from_posterior(args.device,args.class_index,output_directory_skeletons,test_loader)
+
+
+
+
+
+# def load_fold_data(fold_idx):
+#     train_data = np.load(f'data/folds/train_data_fold{fold_idx}.npy')
+#     train_labels = np.load(f'data/folds/train_labels_fold{fold_idx}.npy')
+#     train_scores = np.load(f'data/folds/train_scores_fold{fold_idx}.npy')
+#     test_data = np.load(f'data/folds/test_data_fold{fold_idx}.npy')
+#     test_labels = np.load(f'data/folds/test_labels_fold{fold_idx}.npy')
+#     test_scores = np.load(f'data/folds/test_scores_fold{fold_idx}.npy')
+#     return train_data, train_labels, train_scores, test_data, test_labels, test_scores

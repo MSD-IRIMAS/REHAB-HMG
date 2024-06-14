@@ -1,7 +1,9 @@
 import torch
 import numpy as np
 import sys
-sys.path.append('/home/hferrar/HMG/utils')
+import sys
+
+sys.path.append('../')
 from torch.utils.data import Subset, Dataset,DataLoader
 from utils.normalize import normalize_skeletons,normalize_scores
 

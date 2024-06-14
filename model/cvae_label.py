@@ -11,7 +11,8 @@ import torch.nn.functional as F
 from sklearn.manifold import TSNE
 from torch.autograd import Variable
 from sklearn.decomposition import PCA
-sys.path.append('/home/hferrar/REHABProject/model/utils')
+
+sys.path.append('../utils')
 from utils.plot import plot_loss, plot_latent_space
 from utils.normalize import unnormalize_generated_skeletons
 from utils.visualize import plot_skel
@@ -223,6 +224,7 @@ class CVAEL(nn.Module):
         self.to(device)
         self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
         encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
+       
         generated_samples = []
         generated_samples_unnormalized = []
         
@@ -230,49 +232,61 @@ class CVAEL(nn.Module):
         labels=[]
         for data, label, _ in dataloader: 
             labels.append(label)
-            true_samples.append(data)
+      
+            
           
             data = data.to(device)
-            label = torch.tensor(label, dtype=torch.long).to(device)
-            label = F.one_hot(label, num_classes=self.num_classes)
-          
+            label_enc = torch.tensor(label, dtype=torch.long).to(device)    
+            label_enc = F.one_hot(label_enc, num_classes=self.num_classes)
+            
             
             with torch.no_grad():
-                z_mu, z_logvar = self.encoder(data,label)
+                z_mu, z_logvar = self.encoder(data,label_enc)
                 z = self.reparameterize(z_mu,z_logvar)
-                generated_sample = self.decoder(z, label).cpu().double().detach().numpy()
-                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                        # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
-                generated_samples.append(generated_sample)
-                generated_samples_unnormalized.append(unnormalized_sample)
+     
+                c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
+             
+                generated_sample = self.decoder(z, c).cpu().double().detach().numpy()
+                if label.item() == class_index:
+                        unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                        generated_samples.append(generated_sample)
+                        generated_samples_unnormalized.append(unnormalized_sample)
+                        true_samples.append(data.cpu().detach().numpy())  # Store true sam
+                
             
         generated_samples_array = np.concatenate(generated_samples, axis=0)
         generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
         true_samples = np.concatenate(true_samples,axis=0)
-        print(label)
+      
         np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
         np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
        
-        np.save(os.path.join(gif_directory,'true_samples.npy'), true_samples)
+        np.save(os.path.join(gif_directory,f'true_samples_{class_index}.npy'), true_samples)
       
 
 
     def generate_samples_from_prior(self, device, class_index, gif_directory):
         self.device = device
         self.to(device)
+        print(self.output_directory + 'last_decoder.pth')
         self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
+        
         generated_samples = []
         generated_samples_unnormalized = []
-        sample = torch.randn(1,self.latent_dimension).to(device)
-        for i in range(16):
+        
+        for i in range(17):
             with torch.no_grad():
+                sample = torch.randn(1,self.latent_dimension).to(device)
                
                 c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
                 generated_sample = self.decoder(sample,c ).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
-                   
+                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                generated_samples_unnormalized.append(unnormalized_sample)
+        generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)   
         generated_samples_array = np.concatenate(generated_samples, axis=0)
         np.save(os.path.join(gif_directory,'generated_samples_prior.npy'), generated_samples_array)
+        np.save(os.path.join(gif_directory,'generated_samples_unnormalized_prior.npy'), generated_samples_unnormalized)
 
 
 

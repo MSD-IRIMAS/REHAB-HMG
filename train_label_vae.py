@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data
-from model.CVAE_label import CVAEL
+from model.cvae_label import CVAEL
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader,Subset
 import torch
@@ -59,7 +59,7 @@ def get_args():
         '--runs',
         help="Number of experiments to do.",
         type=int,
-        default=5
+        default=1
     )
 
 
@@ -105,13 +105,15 @@ if __name__ == "__main__":
     create_directory(output_directory_generator)
     
     dataset_dir = 'data/' + args.dataset + '/'
-    data,labels,scores = load_data(root_dir=dataset_dir)
+    data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
+    
     dataset = Kimore(data,labels,scores)
     train_indices, test_indices = train_test_split(range(len(dataset)), test_size=0.2, random_state=42)
     train_dataset = Subset(dataset, train_indices)
     test_dataset = Subset(dataset, test_indices)
     train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+ 
 
 
     for _run in range(args.runs):
@@ -130,9 +132,10 @@ if __name__ == "__main__":
                 generator = CVAEL(output_directory=output_directory_cvael,
                 epochs=args.epochs,
                 device=args.device)
-                # generator.train_function(train_loader,device=args.device)
-                # generator.visualize_latent_space(train_loader,device=args.device)
-                generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)    
+                generator.train_function(train_loader,device=args.device)
+                generator.visualize_latent_space(train_loader,device=args.device)
+                # generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)    
+                # generator.generate_samples_from_posterior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)    
 
     
           

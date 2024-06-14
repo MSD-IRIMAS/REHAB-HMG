@@ -38,7 +38,7 @@ class MotionEncoder(nn.Module):
         self.mu = nn.Linear(self.filters*606+mlp_dim , self.latent_dimension)
         self.log_var = nn.Linear(self.filters*606+mlp_dim, self.latent_dimension)
     def forward(self, x, label):
-        score = self.score_mlp(score.float())
+        
         x = x.view(x.size(0), x.size(1), -1)
         x = x.permute(0, 2, 1)
         x = F.relu(self.conv1(x))
@@ -79,6 +79,7 @@ class MotionDecoder(nn.Module):
 
     def forward(self, z, label, score):
         score = self.score_mlp(score.float())
+       
         label = self.label_mlp(label.float())
         z = torch.cat((z, label, score), dim=1)
         z = self.fc(z)
@@ -281,73 +282,134 @@ class CVAE(nn.Module):
 
 
 
+    # def generate_samples_from_posterior(self, device, class_index, gif_directory, dataloader):
+    #     self.device = device
+    #     self.to(device)
+    #     self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
+    #     encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
+
+    #     print('ffffffffffffffffffff')
+    #     generated_samples = []
+    #     generated_samples_unnormalized = []
+    #     scores = []
+    #     true_samples =[]
+    #     labels=[]
+    #     for data, label, score_value in dataloader: 
+    #         labels.append(label)
+    #         if class_index == label :
+    #                 true_samples.append(data)
+    #                 scores.append(score_value*100.0)
+            
+            
+    #         data = data.to(device)
+    #         label = torch.tensor(label, dtype=torch.long).to(device)
+    #         label = F.one_hot(label, num_classes=self.num_classes)
+    #         score = score_value.to(device) 
+            
+    #         with torch.no_grad():
+    #             z_mu, z_logvar = self.encoder(data,label)
+    #             z = self.reparameterize(z_mu,z_logvar)
+    #             generated_sample = self.decoder(z, label, score).cpu().double().detach().numpy()
+    #             unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+    #                     # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
+    #             generated_samples.append(generated_sample)
+    #             generated_samples_unnormalized.append(unnormalized_sample)
+            
+    #     generated_samples_array = np.concatenate(generated_samples, axis=0)
+    #     generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
+    #     true_samples = np.concatenate(true_samples,axis=0)
+        
+    #     scores= np.asarray(scores)
+    #     print(labels)
+    #     np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
+    #     np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
+    #     np.save(os.path.join(gif_directory,'scores.npy'), scores)
+    #     np.save(os.path.join(gif_directory,f'true_samples_{class_index}.npy'), true_samples)
+      
     def generate_samples_from_posterior(self, device, class_index, gif_directory, dataloader):
+            self.device = device
+            self.to(device)
+            self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
+            self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
+            print(self.output_directory + 'last_encoder.pth')
+            print(self.output_directory + 'last_decoder.pth')
+
+            generated_samples = []
+            generated_samples_unnormalized = []
+            scores = []
+            true_samples = []
+
+            for data, label, score_value in dataloader:
+                data = data.to(device)
+                label = label.to(device)
+                label_enc = torch.tensor(label, dtype=torch.long).to(device)
+                label_enc = F.one_hot(label_enc, num_classes=self.num_classes)
+                score = score_value.to(device)
+                z_mu, z_logvar = self.encoder(data, label_enc)
+                z = self.reparameterize(z_mu, z_logvar)
+                generated_sample = self.decoder(z, label_enc, score).cpu().detach().numpy()
+                generated_samples.append(generated_sample)
+                true_samples.append(data.cpu().detach().numpy())  
+                scores.append(score_value * 100.0)
+           
+            generated_samples_array = np.concatenate(generated_samples, axis=0)
+          
+            # generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
+            true_samples = np.concatenate(true_samples, axis=0)
+            scores = np.array(scores)
+
+            # Save generated samples, unnormalized samples, true samples, and scores
+            # np.save(os.path.join(gif_directory, 'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
+            np.save(os.path.join(gif_directory, 'generated_samples.npy'), generated_samples_array)
+            np.save(os.path.join(gif_directory, 'scores.npy'), scores)
+            np.save(os.path.join(gif_directory, f'true_samples_{class_index}.npy'), true_samples)
+
+    def generate_samples_from_prior(self, device, class_index, gif_directory,dataloader):
         self.device = device
         self.to(device)
         self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
-        encoder = self.encoder.load_state_dict(torch.load(self.output_directory + 'last_encoder.pth', map_location=device))
-        generated_samples = []
-        generated_samples_unnormalized = []
-        scores = []
-        true_samples =[]
-        labels=[]
-        for data, label, score_value in dataloader: 
-            labels.append(label)
-            true_samples.append(data)
-            scores.append(score_value*100.0)
-            data = data.to(device)
-            label = torch.tensor(label, dtype=torch.long).to(device)
-            label = F.one_hot(label, num_classes=self.num_classes)
-            score = score_value.to(device) 
-            
-            with torch.no_grad():
-                z_mu, z_logvar = self.encoder(data,label)
-                z = self.reparameterize(z_mu,z_logvar)
-                generated_sample = self.decoder(z, label, score).cpu().double().detach().numpy()
-                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                        # plot_skel(unnormalized_sample,gif_directory,title='exercice'+str(class_index)+'_score='+str(score_value))
-                generated_samples.append(generated_sample)
-                generated_samples_unnormalized.append(unnormalized_sample)
-            
-        generated_samples_array = np.concatenate(generated_samples, axis=0)
-        generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
-        true_samples = np.concatenate(true_samples,axis=0)
-        
-        scores= np.asarray(scores)
-        print(labels)
-        np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
-        np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
-        np.save(os.path.join(gif_directory,'scores.npy'), scores)
-        np.save(os.path.join(gif_directory,'true_samples.npy'), true_samples)
       
-
-
-    def generate_samples_from_prior(self, device, class_index, gif_directory):
-        self.device = device
-        self.to(device)
-        self.decoder.load_state_dict(torch.load(self.output_directory + 'best_decoder.pth', map_location=device))
-        print('path',self.output_directory + 'best_decoder.pth')
         generated_samples = []
-        generated_samples_unnormalized = []
-        scores = [ 41.66667 ,100.   ,    75.   ,    11.66667  ,95.83333 , 81.66667 , 82.5,
-  91.66667 , 70. ,      90.   ,    10.   ,    76.66667 , 59.16667 , 90.,
-  64.16667  ,65.     ]
+      
+        scores = []
 
-        scores1=[ 72.5  ,   32.5 ,  72.5 , 81.66667 ,  0. , 92.5 ,97.5, 76.66667,38.33333 ,100. , 76.66667 ,100.  ,  85.  , 46.66667,95. ]
-        scores2 =[ 72.5 ,50.,82.5,80.83333, 0. ,95.,100.,89.16667, 65.83333,92.5 ,92.5,77.5 , 87.5, 70.,95.     ]
-        scores3 =[ 77.5, 50.,25., 48.33333 ,  10.  ,     100.,100.  , 55.83333 , 18.33333, 60.000004,85.83333 ,85.,77.5 ,53.33333 , 60.000004]
-        scores4=[ 87.5 , 45., 70., 57.5 , 17.5 , 100., 95.,81.66667 , 38.33333 ,100.,  83.33333, 97.5, 65.,  28.33333,85.     ]
-        
+        for data, label, score in dataloader:
+            scores.append(score * 100.0)
+            scores = np.array(scores)
+        scores = scores.squeeze(0).squeeze(1)
+            # 
         for score in scores:
             with torch.no_grad():
                 sample = torch.randn(1,self.latent_dimension).to(device)
-                score = torch.tensor([score/100.0 ]).unsqueeze(1).to(device)
+                score = torch.tensor([score]).unsqueeze(1).to(device)
                 c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
                 generated_sample = self.decoder(sample, c, score).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
-                   
+                
         generated_samples_array = np.concatenate(generated_samples, axis=0)
-        np.save(os.path.join(gif_directory,'generated_samples_prior.npy'), generated_samples_array)
+        np.save(os.path.join(gif_directory,f'generated_samples_prior.npy'), generated_samples_array)
+        np.save(os.path.join(gif_directory, 'scores.npy'), scores)
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
     def evaluate_function(self, dataloader, device):
         self.device = device
