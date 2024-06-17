@@ -94,9 +94,9 @@ from normalize import normalize_skeletons
 # dtw_calculator.calculate_dtw(xtrain, xtest, scores, class_index)
 
 
-class_index =0
-fold = 2
-xtrain = np.load(f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/generated_samples_prior.npy')
+class_index =4
+fold = 5
+xtrain = np.load(f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/generated_samples.npy')
 scores= np.load(f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/scores.npy').squeeze(0).squeeze(1)
 data= np.load(f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/true_samples_{class_index}.npy')
 print(xtrain.shape,data.shape,scores.shape)
@@ -144,16 +144,16 @@ def calculate_dtw_and_save_results(xtrain, xtest, output_file, ytrain, min_dista
             min_index = None
             for j in range(len(xtest)):
                 distance = dtw_distance(xtrain[i, :, :], xtest[j, :, :])
-                f.write(f"DTW distance for generated sample {i} and true sample {j} is: {distance}\n")
+                f.write(f"DTW distance for generated sample {i} and true sample {j} is: {distance} \\\ \n")
                 if distance < min_distance:
                     min_distance = distance
                     min_index = j
-            f.write(f"Minimal DTW distance for generated sample {i} with score {ytrain[i]:.2f} is: {min_distance}\n")
+            f.write(f"Minimal DTW distance for generated sample {i} with score {ytrain[i]:.2f} is {min_distance} of the true sample{min_index} \\\ \n")
             write_min_distance_info(min_distance_file, i, min_index, ytrain)
 
 
 # Example usage
-calculate_dtw_and_save_results(xtrain, data, f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/dtw_evaluation_results__prior.txt',scores, f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/min_dtw_evaluation_results_prior.txt',class_index)
+calculate_dtw_and_save_results(xtrain, data, f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/dtw_evaluation_results.txt',scores, f'../results/run_0/cross_validation/class_{class_index}/fold_{fold}/generated_samples/min_dtw_evaluation_results.txt',class_index)
 
 
 
