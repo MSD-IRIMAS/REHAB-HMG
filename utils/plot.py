@@ -29,5 +29,17 @@ def plot_regressor_loss(epochs,train_loss,test_loss,output_directory):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss Curve')
+    plt.savefig(os.path.join(output_directory, 'loss.pdf'))
     plt.legend()
     # plt.show()
+def plot_true_pred_scores(predicted_scores,true_scores, output_directory  ):
+        plt.figure(figsize=(10, 6))
+        plt.plot(predicted_scores, label='Predicted Scores')
+        plt.plot(true_scores,  label='True Scores')
+        plt.xlabel('Sample Index')
+        plt.ylabel('Score')
+        title='True vs Predicted Scores'
+        plt.title(title)
+        plt.savefig(os.path.join(output_directory, title+'.pdf'))
+        plt.legend()
+        plt.show()

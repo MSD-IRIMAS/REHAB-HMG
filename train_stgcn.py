@@ -8,21 +8,18 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_class
 from sklearn.model_selection import train_test_split
-from model.cvae import CVAE
-from model.cvae_label import CVAEL
 from torch.utils.data import DataLoader,Subset
+from model.stgcn import STGCN
 import torch
 
 def get_args():
     parser = argparse.ArgumentParser(
-    description="")
+    description="training STGCN to predict generated data score")
 
     parser.add_argument(
-        '--generative-model',
-        help="Which generative model to use .",
+        '--stgcn',
         type=str,
-        choices=['CVAE','CVAEL'],
-        default='CVAE',
+        default='STGCN',
     )
 
     parser.add_argument(
@@ -44,22 +41,6 @@ def get_args():
         type=int,
         default=5
     )
-
-
-    parser.add_argument(
-        '--weight-rec',
-        help="Weight for the reconstruction loss.",
-        type=float,
-        default=0.99
-    )
-
-    parser.add_argument(
-        '--weight-kl',
-        help="Weight for the kl loss.",
-        type=float,
-        default=1e-3
-    )
-
     parser.add_argument(
         '--epochs',
         help="Number of epochs to train the model.",
@@ -83,7 +64,7 @@ def get_args():
     )
     parser.add_argument(
         '--class_index',
-        help="which class to generate from",
+        help="which class to use",
         type=int,
         default=0
     )
@@ -99,17 +80,15 @@ if __name__ == "__main__":
     output_directory_results = args.output_directory
     create_directory(output_directory_results)
 
-    output_directory_gen_models = output_directory_results + 'Generative_models/'
+    output_directory_gen_models = output_directory_results + 'stgcn/'
     create_directory(output_directory_gen_models)
 
     output_directory_dataset = output_directory_gen_models + args.dataset + '/'
     create_directory(output_directory_dataset)
 
-    output_directory_generator = output_directory_dataset + args.generative_model + '/'
+    output_directory_generator = output_directory_dataset + args.stgcn + '/'
     create_directory(output_directory_generator)
 
-    output_directory_weights_losses = output_directory_generator + 'Wrec_' + str(args.weight_rec) + '_Wkl_' + str(args.weight_kl) + '/'
-    create_directory(output_directory_weights_losses)
 
     dataset_dir = 'data/' + args.dataset + '/'
     data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
@@ -119,12 +98,13 @@ if __name__ == "__main__":
     test_dataset = Subset(dataset, test_indices)
     train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-    # dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
+
+
 
     if args.data_split == 'all':
         for _run in range(args.runs):
 
-                output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
+                output_directory_run = output_directory_gen_models + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
                 output_directory_skeletons = output_directory_run + 'generated_samples/'
                 create_directory(output_directory_skeletons)
@@ -132,35 +112,24 @@ if __name__ == "__main__":
                 output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
                 create_directory(output_directory_skeletons_class)
 
-                if args.generative_model == 'CVAE':
-                    generator = CVAE(output_directory=output_directory_run,
-                    epochs=args.epochs,
-                    device=args.device,
-                    w_rec=args.weight_rec,
-                    w_kl=args.weight_kl)
-                    # generator.train_function(dataloader,device=args.device)
-                    # generator.visualize_latent_space(dataloader,device=args.device)
-                    # generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
+               
     elif args.data_split == 'split':
         for _run in range(args.runs):
 
-                output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
+                output_directory_run = output_directory_gen_models + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
                 output_directory_skeletons = output_directory_run + 'generated_samples/'
                 create_directory(output_directory_skeletons)
 
                 output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
                 create_directory(output_directory_skeletons_class)
-
-                if args.generative_model == 'CVAE':
-                    generator = CVAE(output_directory=output_directory_skeletons_class,
+                model = STGCN(
+                    output_directory=output_directory_skeletons_class,
                     epochs=args.epochs,
-                    device=args.device,
-                    w_rec=args.weight_rec,
-                    w_kl=args.weight_kl)
-                    # generator.train_function(train_loader,device=args.device)
-                    # generator.visualize_latent_space(train_loader,device=args.device)
-                    # generator.generate_samples_from_posterior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
-                    generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
+                    device=args.device)
+                model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
+                model.predict_scores(test_loader,args.device)
+
+               
 
 
