@@ -32,9 +32,10 @@ class Graph:
     def get_edge(self):
         self.num_node = 18
         self_link = [(i, i) for i in range(self.num_node)]
-        neighbor_link = self.joint_pairs
+        # neighbor_link = self.joint_pairs
+        neighbor_link = [(i - 1, j - 1) for (i, j) in joint_pairs]
         self.edge = self_link + neighbor_link
-        self.center = 1
+        self.center = 0
 
     def get_adjacency(self, strategy):
         valid_hop = range(0, self.max_hop + 1, self.dilation)
@@ -82,8 +83,6 @@ class Graph:
         for i, j in edge:
             A[j, i] = 1
             A[i, j] = 1
-
-      
         hop_dis = np.zeros((num_node, num_node)) + np.inf
         transfer_mat = [np.linalg.matrix_power(A, d) for d in range(max_hop + 1)]
         arrive_mat = (np.stack(transfer_mat) > 0)
@@ -101,21 +100,10 @@ class Graph:
         AD = np.dot(A, Dn)
         return AD
 
-    def normalize_undigraph(self, A):
-        Dl = np.sum(A, 0)
-        num_node = A.shape[0]
-        Dn = np.zeros((num_node, num_node))
-        for i in range(num_node):
-            if Dl[i] > 0:
-                Dn[i, i] = Dl[i]**(-0.5)
-        DAD = np.dot(np.dot(Dn, A), Dn)
-        return DAD
-
-
-if __name__ == "__main__":
-    graph = Graph(num_nodes=18)
-    print("Adjacency Matrix:")
-    print(graph)
+# if __name__ == "__main__":
+#     graph = Graph(num_nodes=18)
+#     print("Adjacency Matrix:")
+#     print(graph)
 
 
 

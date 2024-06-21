@@ -126,7 +126,8 @@ if __name__ == "__main__":
                 model = STGCN(
                     output_directory=output_directory_skeletons_class,
                     epochs=args.epochs,
-                    device=args.device)
+                    device=args.device,
+                    edge_importance_weighting=True)
                 model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
                 model.predict_scores(test_loader,args.device)
 
