@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from sklearn.manifold import TSNE
 from torch.autograd import Variable
 from sklearn.decomposition import PCA
-sys.path.append('/home/hferrar/REHABProject/model/utils')
+sys.path.append('..')
 from utils.plot import plot_loss, plot_latent_space
 from utils.normalize import unnormalize_generated_skeletons
 from utils.visualize import plot_skel
@@ -351,6 +351,8 @@ class CVAE(nn.Module):
                 generated_samples.append(generated_sample)
                 true_samples.append(data.cpu().detach().numpy())  
                 scores.append(score_value * 100.0)
+                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                plot_skel(unnormalized_sample,gif_directory,title='post_'+'score='+str(score))
            
             generated_samples_array = np.concatenate(generated_samples, axis=0)
           
@@ -374,17 +376,19 @@ class CVAE(nn.Module):
         scores = []
 
         for data, label, score in dataloader:
-            scores.append(score * 100.0)
+            scores.append(score * 100.0) ########################## WHY 100
             scores = np.array(scores)
         scores = scores.squeeze(0).squeeze(1)
             # 
         for score in scores:
             with torch.no_grad():
                 sample = torch.randn(1,self.latent_dimension).to(device)
-                score = torch.tensor([score]).unsqueeze(1).to(device)
+                score = torch.tensor([score/100]).unsqueeze(1).to(device)
                 c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
                 generated_sample = self.decoder(sample, c, score).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
+                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                plot_skel(unnormalized_sample,gif_directory,title='prior_'+'score='+str(score))
                 
         generated_samples_array = np.concatenate(generated_samples, axis=0)
         np.save(os.path.join(gif_directory,f'generated_samples_prior.npy'), generated_samples_array)
