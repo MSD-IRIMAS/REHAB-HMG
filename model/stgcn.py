@@ -87,7 +87,7 @@ class st_gcn(nn.Module):
 
 
 class STGCN(nn.Module):
-    def __init__(self,device,output_directory,epochs,score=1,lr=1e-4, **kwargs):
+    def __init__(self,device,output_directory,epochs,edge_importance_weighting,score=1,lr=1e-4, **kwargs):
         super(STGCN,self).__init__()
         self.criterion = nn.MSELoss()
         self.score=1
@@ -95,15 +95,17 @@ class STGCN(nn.Module):
         self.output_directory = output_directory
         self.epochs = epochs
         self.lr=lr
+       
         # load graph
         self.graph = Graph()
         A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
         self.register_buffer('A', A)
+        self.data_bn = nn.BatchNorm1d(3 * A.size(1))
         spatial_kernel_size = A.size(0)
         temporal_kernel_size = 9
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
         self.stgcn_network = nn.ModuleList(
-       [     st_gcn(3, 64, kernel_size, 1, residual=False),
+       [    st_gcn(3, 64, kernel_size, 1, residual=False),
             st_gcn(64, 64, kernel_size, 1, **kwargs),
             st_gcn(64, 64, kernel_size, 1, **kwargs),
             st_gcn(64, 64, kernel_size, 1, **kwargs),
@@ -115,7 +117,15 @@ class STGCN(nn.Module):
             st_gcn(256, 256, kernel_size, 1, **kwargs)]
             
             )
-        # regressio layer
+        
+        if edge_importance_weighting:
+            self.edge_importance = nn.ParameterList([
+                nn.Parameter(torch.ones(self.A.size()))
+                for i in self.stgcn_network
+            ])
+        else:
+            self.edge_importance = [1] * len(self.stgcn_network)
+        # regression layers
         self.lin1 = nn.Linear(256, 128)
         self.lin2= nn.Linear(128, 64)
         self.lin3 = nn.Linear(64, score)
@@ -123,11 +133,19 @@ class STGCN(nn.Module):
     def forward(self,x):
         x =x.permute(0,3,1,2).unsqueeze(4)
         N, C, T, V, M = x.size()
+        x = x.permute(0, 4, 3, 1, 2).contiguous()
+        x = x.view(N * M, V * C, T)
+        x = self.data_bn(x)
+        x = x.view(N, M, V, C, T)
+        x = x.permute(0, 1, 3, 4, 2).contiguous()
         x = x.view(N * M, C, T, V)
+        
 
 
-        for gcn in self.stgcn_network:
-            x, _ = gcn(x, self.A)
+        # for gcn in self.stgcn_network:
+        #     x, _ = gcn(x, self.A)
+        for gcn, importance in zip(self.stgcn_network, self.edge_importance):
+            x, _ = gcn(x, self.A * importance)
 
 
         x = F.avg_pool2d(x, x.size()[2:])
@@ -149,6 +167,7 @@ class STGCN(nn.Module):
         self.device=device
         self.to(device)
         optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,'min')
         train_losses = []
         test_losses = []
         min_loss = float('inf')
@@ -181,10 +200,12 @@ class STGCN(nn.Module):
                     test_loss += loss.item()
             test_loss /= len(test_loader.dataset)
             test_losses.append(test_loss)
+            scheduler.step(test_loss)
             print(f"Epoch {epoch+1}/{self.epochs}, Train Loss: {train_loss:.6f}, Test Loss: {test_loss:.6f}")
             if train_losses[-1] < min_loss:
                 min_loss = train_losses[-1]
                 torch.save(self.state_dict(), os.path.join(self.output_directory, 'best_stgcn.pth'))
+            torch.save(self.state_dict(), os.path.join(self.output_directory, 'last_stgcn.pth'))
         plot_regressor_loss(self.epochs, train_losses, test_losses,self.output_directory)
     
     def predict_scores(self, test_loader,device):
@@ -196,7 +217,7 @@ class STGCN(nn.Module):
         with torch.no_grad():
             for i in range(num_samples):
                 input_tensor = test_loader.dataset[i]
-                data = input_tensor[0].unsqueeze(0).to(device)
+                data = input_tensor[0].unsqueeze(0)
                 true_score = input_tensor[2].item()
                 prediction = self(data)
                 predicted_score = prediction.item()
