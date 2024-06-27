@@ -13,7 +13,7 @@ from utils.graph_layers.graph import Graph
 from utils.graph_layers.temporal_conv import TemporalConvGraph
 from utils.plot import plot_regressor_loss,plot_true_pred_scores
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
-
+from scipy.stats import spearmanr
 class st_gcn(nn.Module):
     r"""Applies a spatial temporal graph convolution over an input graph sequence.
     Args:
@@ -221,9 +221,13 @@ class STGCN(nn.Module):
         rmse = mean_squared_error(true_scores,predicted_scores)
         mae = mean_absolute_error(true_scores,predicted_scores)
         mape = mean_absolute_percentage_error(true_scores,predicted_scores)
+        rho, p_value = spearmanr(true_scores, predicted_scores)
+        
         print(f'RMSE: {rmse:.4f}')
         print(f'MAE: {mae:.4f}')
         print(f'MAPE: {mape:.4f}')
+        print(f"Spearman's correlation coefficient: {rho:.4f}")
+        print(f"P-value: {p_value:.4f}")
 
     def square_plot(self,pred_test,valid_y):
         plt.figure(figsize = (8,8))
