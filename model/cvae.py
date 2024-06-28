@@ -28,6 +28,12 @@ class MotionEncoder(nn.Module):
             nn.Linear(hid_score, mlp_dim),
             nn.ReLU(),
         )
+        self.score_mlp = nn.Sequential(
+            nn.Linear(score_dim, hid_score),
+            nn.ReLU(),
+            nn.Linear(hid_score, mlp_dim),
+            nn.ReLU(),
+        )
  
         self.conv1 = nn.Conv1d(54, self.filters, kernel_size=70)
         self.conv2 = nn.Conv1d(self.filters,self.filters,kernel_size=40)
@@ -35,9 +41,10 @@ class MotionEncoder(nn.Module):
         self.conv4 = nn.Conv1d(self.filters,self.filters,kernel_size=10)
         self.conv5 = nn.Conv1d(self.filters,self.filters,kernel_size=5)
         self.conv6 = nn.Conv1d(self.filters,self.filters,kernel_size=3)
-        self.mu = nn.Linear(self.filters*606+mlp_dim , self.latent_dimension)
-        self.log_var = nn.Linear(self.filters*606+mlp_dim, self.latent_dimension)
-    def forward(self, x, label):
+        self.mu = nn.Linear(self.filters*606+mlp_dim+mlp_dim , self.latent_dimension)
+        self.log_var = nn.Linear(self.filters*606+mlp_dim+mlp_dim, self.latent_dimension)
+    def forward(self, x, label,score):
+        score = self.score_mlp(score.float())
         
         x = x.view(x.size(0), x.size(1), -1)
         x = x.permute(0, 2, 1)
@@ -48,7 +55,7 @@ class MotionEncoder(nn.Module):
         x = F.relu(self.conv5(x))
         x = F.relu(self.conv6(x))
         x = x.view(x.size(0), -1)
-        x = torch.cat((x, self.label_mlp(label.float())), dim=1)
+        x = torch.cat((x, self.label_mlp(label.float()),score), dim=1)
         mu = self.mu(x)
         log_var = self.log_var(x)
         return mu, log_var
@@ -115,7 +122,7 @@ class CVAE(nn.Module):
         return mu + eps * std
 
     def forward(self, x, label, score):
-        mu, log_var = self.encoder(x, label)
+        mu, log_var = self.encoder(x, label,score)
         z = self.reparameterize(mu, log_var)
        
         x_reconst = self.decoder(z, label, score)
@@ -136,7 +143,7 @@ class CVAE(nn.Module):
         score = score.to(self.device)
         label = F.one_hot(label, num_classes=self.num_classes)
         optimizer.zero_grad()
-        mu, log_var = self.encoder(x, label)
+        mu, log_var = self.encoder(x, label,score)
         latent_space = self.reparameterize(mu, log_var)
       
         reconstructed_samples = self.decoder(latent_space, label, score)
@@ -195,7 +202,7 @@ class CVAE(nn.Module):
                 batch_labels = torch.tensor(batch_labels, dtype=torch.long)
                 batch_labels = batch_labels.to(device)
                 batch_labels = F.one_hot(batch_labels, num_classes=self.num_classes)
-                mu, _ = self.encoder(data, batch_labels)
+                mu, _ = self.encoder(data, batch_labels,score)
                 latent_space.append(mu.cpu().numpy())
             latent_space = np.vstack(latent_space)
             labels = [int(label.item()) for label in labels]
@@ -388,7 +395,7 @@ class CVAE(nn.Module):
                 generated_sample = self.decoder(sample, c, score).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
                 unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                plot_skel(unnormalized_sample,gif_directory,title='prior_'+'score='+str(score))
+             
                 
         generated_samples_array = np.concatenate(generated_samples, axis=0)
         np.save(os.path.join(gif_directory,f'generated_samples_prior.npy'), generated_samples_array)

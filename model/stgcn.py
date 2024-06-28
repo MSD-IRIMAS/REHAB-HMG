@@ -179,6 +179,8 @@ class STGCN(nn.Module):
         train_losses = []
         test_losses = []
         min_loss = float('inf')
+        train_scores= []
+        scores=[]
         for epoch in range(self.epochs):
             self.train()
             train_loss = 0.0
@@ -189,7 +191,9 @@ class STGCN(nn.Module):
                 output = self(data)
                 # Ensure target tensor has the same shape as the output tensor
                 score = score.view_as(output)
-                loss = self.loss(output, score)
+                train_scores.append(output)
+                scores.append(score)
+                loss = self.loss(score,output)
                 loss.backward()
                 optimizer.step()
                 train_loss += loss.item()
@@ -269,11 +273,11 @@ class STGCN(nn.Module):
             self.square_plot(predicted_scores,true_scores)
             self.score_error(true_scores,predicted_scores)
 
+
+
+
+
     
-
-
-
-
   #####################" REFACTOR THIS FUNCTION ##########################"  
 
     def test_predictions(self,device):
