@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader,Subset
 from model.stgcn import STGCN
 import torch
+from utils.normalize import normalize_skeletons, normalize_test_set
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -90,16 +91,17 @@ if __name__ == "__main__":
     create_directory(output_directory_generator)
 
 
+
     dataset_dir = 'data/' + args.dataset + '/'
     data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
-    dataset = Kimore(data,labels,scores)
-    train_indices, test_indices = train_test_split(range(len(dataset)), test_size=0.2, random_state=42)
-    train_dataset = Subset(dataset, train_indices)
-    test_dataset = Subset(dataset, test_indices)
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-
-
+   
+    xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
+    xtrain= normalize_skeletons(xtrain)
+    train_set = Kimore(xtrain,ytrain,strain)
+    train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
+    xtest= normalize_test_set(xtest)
+    test_set = Kimore(xtest,ytest,stest)
+    test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
 
     if args.data_split == 'all':
         for _run in range(args.runs):
@@ -128,8 +130,11 @@ if __name__ == "__main__":
                     epochs=args.epochs,
                     device=args.device,
                     edge_importance_weighting=True)
+                # model.features_extractor(device=args.device,data_loader=train_loader)
                 model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
                 model.predict_scores(test_loader,args.device)
+                model.plot_train_scores(device= args.device,train_loader=train_loader)
+                # model.test_predictions(args.device)
 
                
 
