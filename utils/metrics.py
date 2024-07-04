@@ -7,6 +7,7 @@ import scipy as sc
 import torch.nn as nn
 sys.path.append('../')
 from model.stgcn import STGCN
+from scipy.linalg import sqrtm 
 from numpy.lib import scimath as sc
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import NearestNeighbors
@@ -48,7 +49,7 @@ class FID:
         mean_diff = mean_x - mean_y
         mean_squared_norm = np.dot(mean_diff, mean_diff)
 
-        cov_sqrt_product = sc.linalg.sqrtm(np.dot(cov_x, cov_y))
+        cov_sqrt_product = sqrtm(np.dot(cov_x, cov_y))
         if np.iscomplexobj(cov_sqrt_product):
             cov_sqrt_product = cov_sqrt_product.real
         trace_sqrt = np.trace(cov_sqrt_product)
