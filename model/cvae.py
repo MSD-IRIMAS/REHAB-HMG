@@ -103,7 +103,7 @@ class MotionDecoder(nn.Module):
         return z
 
 class CVAE(nn.Module):
-    def __init__(self, output_directory, epochs, device, latent_dimension=16, num_classes=5, hid_dim=16, mlp_dim=16, hid_score=16, score_dim=1, filters=128, lr=1e-4, w_kl=1e-3, w_rec=0.999):
+    def __init__(self, output_directory, device,epochs=2000, latent_dimension=16, num_classes=5, hid_dim=16, mlp_dim=16, hid_score=16, score_dim=1, filters=128, lr=1e-4, w_kl=1e-3, w_rec=0.999):
         super(CVAE, self).__init__()
         self.output_directory = output_directory
         self.epochs = epochs
