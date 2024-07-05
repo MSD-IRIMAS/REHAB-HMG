@@ -54,24 +54,6 @@ class FeatureExtractor:
         return features
 
 
-
-def calculate_fid( features_x, features_y):
-        
-        mean_x = np.mean(features_x, axis=0)
-        mean_y = np.mean(features_y, axis=0)
-
-        cov_x = np.cov(features_x, rowvar=False)
-        cov_y = np.cov(features_y, rowvar=False)
-
-        mean_diff = mean_x - mean_y
-        mean_squared_norm = np.dot(mean_diff, mean_diff)
-
-        cov_sqrt_product = sqrtm(np.dot(cov_x, cov_y))
-        if np.iscomplexobj(cov_sqrt_product):
-            cov_sqrt_product = cov_sqrt_product.real
-        trace_sqrt = np.trace(cov_sqrt_product)
-        fid = mean_squared_norm + np.trace(cov_x) + np.trace(cov_y) - 2 * trace_sqrt
-        return fid
 class FID:
     def __init__(self, feature_extractor):
         self.feature_extractor = feature_extractor
@@ -120,6 +102,36 @@ class Coverage:
 
         return coverage
 
+class Density:
+    def __init__(self, feature_extractor, n_neighbors=5):
+        self.feature_extractor = feature_extractor
+        self.n_neighbors = n_neighbors
+
+    def get_distances_k_neighbors(self, x: np.ndarray, k: int) -> np.ndarray:
+        nn = NearestNeighbors(n_neighbors=k)
+        nn.fit(X=x)
+        distances_neighbors, _ = nn.kneighbors(X=x)
+        return distances_neighbors[:, k - 1]
+
+    def calculate_density(self, xreal_loader, xgenerated_loader ):
+        real_latent = self.feature_extractor.extract_features(xreal_loader)
+        gen_latent = self.feature_extractor.extract_features(xgenerated_loader)
+        real_gen_distance_matrix = pairwise_distances(X=real_latent, Y=gen_latent)
+
+        real_distances_k_neighbors = self.get_distances_k_neighbors(
+            x=real_latent, k=self.n_neighbors + 1
+        )
+
+        scaler = 1 / (1.0 * self.n_neighbors)
+        inside_neighborhood = (
+            real_gen_distance_matrix
+            < np.expand_dims(real_distances_k_neighbors, axis=1)
+        ).sum(axis=0)
+
+        density = scaler * np.mean(inside_neighborhood)
+
+        return density
+
 
 class MMS:
     def __init__(self, feature_extractor, n_neighbors=5):
@@ -138,9 +150,6 @@ class MMS:
             distances = distances[:, 1]
 
         return np.mean(distances)
-
-
-
 
     
 # class FID:

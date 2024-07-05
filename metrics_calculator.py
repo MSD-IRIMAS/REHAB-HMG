@@ -9,7 +9,7 @@ import pandas as pd
 warnings.warn = warn
 from model.cvae import CVAE
 from model.stgcn import STGCN
-from utils.metrics import FID,Coverage,MMS,FeatureExtractor
+from utils.metrics import FID,Coverage,MMS,FeatureExtractor,Density
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_class
 from torch.utils.data import DataLoader,Subset
@@ -131,12 +131,13 @@ if __name__ == "__main__":
         fid_calculator_stgcn = FID(feature_extractor_stgcn)
         coverage_calculator_stgcn = Coverage(feature_extractor_stgcn)
         mms_calculator_stgcn = MMS(feature_extractor_stgcn)
+        density_calculator_stgcn = Density(feature_extractor_stgcn)
         print(feature_extractor_stgcn)
         if args.on == 'real':
             if os.path.exists(stgcn_directory + 'metrics_results.csv'):
                 df = pd.read_csv(stgcn_directory + 'metrics_results.csv')
             else:
-                df = pd.DataFrame(columns=['class','FID','COV','MMS'])
+                df = pd.DataFrame(columns=['class','FID','COV','MMS','Density'])
             #FID metric
             fid_score = fid_calculator_stgcn.calculate_fid(train_loader, test_loader)
             fid_mean = np.mean(fid_score)
@@ -151,13 +152,18 @@ if __name__ == "__main__":
             #MMS metric
             mms_score = mms_calculator_stgcn.calculate_mms(test_loader, train_loader)
             mms_mean = np.mean(mms_score)
+
+            #Density metric
+            mms_score = feature_extractor_reg.calculate_density(test_loader, train_loader)
+            density_mean = np.mean(mms_score)
           
             if args.class_index in df['class'].values:
                 df.loc[df['class'] == args.class_index, 'FID'] = fid_mean
                 df.loc[df['class'] == args.class_index, 'COV'] = cov_mean
                 df.loc[df['class'] == args.class_index, 'MMS'] = mms_mean
+                df.loc[df['class'] == args.class_index, 'Density'] = density_mean
             else:
-                new_row = pd.DataFrame([{'class': args.class_index, 'FID': fid_mean, 'COV': cov_mean, 'MMS': mms_mean}])
+                new_row = pd.DataFrame([{'class': args.class_index, 'FID': fid_mean, 'COV': cov_mean, 'MMS': mms_mean,'Density':density_mean}])
                 df = pd.concat([df, new_row], ignore_index=True)
                       
             df.to_csv(stgcn_directory + 'metrics_results.csv', index=False)
@@ -195,13 +201,18 @@ if __name__ == "__main__":
             #MMS metric
             mms_score = mms_calculator_stgcn.calculate_mms(generated_data=gen_loader, real_data=test_loader)
             mms_mean = np.mean(mms_score)
+
+            #Density metric
+            mms_score = feature_extractor_reg.calculate_density(generated_data=gen_loader, real_data=test_loader)
+            density_mean = np.mean(mms_score)
           
             if args.class_index in df['class'].values:
                 df.loc[df['class'] == args.class_index, 'FID'] = fid_mean
                 df.loc[df['class'] == args.class_index, 'COV'] = cov_mean
                 df.loc[df['class'] == args.class_index, 'MMS'] = mms_mean
+                df.loc[df['class'] == args.class_index, 'Density'] = density_mean
             else:
-                new_row = pd.DataFrame([{'class': args.class_index, 'FID': fid_mean, 'COV': cov_mean, 'MMS': mms_mean}])
+                new_row = pd.DataFrame([{'class': args.class_index, 'FID': fid_mean, 'COV': cov_mean, 'MMS': mms_mean,'Density':density_mean}])
                 df = pd.concat([df, new_row], ignore_index=True)
             df.to_csv(stgcn_directory + 'metrics_results_generated.csv', index=False)
 
@@ -218,6 +229,7 @@ if __name__ == "__main__":
         fid_calculator = FID(feature_extractor_reg)
         coverage_calculator = Coverage(feature_extractor_reg)
         mms_calculator= MMS(feature_extractor_reg)
+        density_calculator_reg = Density(feature_extractor_reg)
 
 
         if args.on == 'real':
@@ -238,11 +250,15 @@ if __name__ == "__main__":
             #MMS metric
             mms_score = mms_calculator.calculate_mms(train_loader, test_loader)
             mms_mean = np.mean(mms_score)
+            #Density metric
+            mms_score = density_calculator_reg.calculate_density(xreal_loader=train_loader,xgenerated_loader= test_loader)
+            density_mean = np.mean(mms_score)
           
             if args.class_index in df['class'].values:
                 df.loc[df['class'] == args.class_index, 'FID'] = fid_mean
                 df.loc[df['class'] == args.class_index, 'COV'] = cov_mean
                 df.loc[df['class'] == args.class_index, 'MMS'] = mms_mean
+                df.loc[df['class'] == args.class_index, 'Density'] = density_mean
             else:
                 new_row = pd.DataFrame([{'class': args.class_index, 'FID': fid_mean, 'COV': cov_mean, 'MMS': mms_mean}])
                 df = pd.concat([df, new_row], ignore_index=True)
@@ -278,11 +294,15 @@ if __name__ == "__main__":
             #MMS metric
             mms_score = mms_calculator.calculate_mms(gen_loader, test_loader)
             mms_mean = np.mean(mms_score)
+            #Density metric
+            mms_score = density_calculator_reg.calculate_density(gen_loader, test_loader)
+            density_mean = np.mean(mms_score)
 
             if args.class_index in df['class'].values:
                 df.loc[df['class'] == args.class_index, 'FID'] = fid_mean
                 df.loc[df['class'] == args.class_index, 'COV'] = cov_mean
                 df.loc[df['class'] == args.class_index, 'MMS'] = mms_mean
+                df.loc[df['class'] == args.class_index, 'Density'] = density_mean
             else:
                 new_row = pd.DataFrame([{'class': args.class_index, 'FID': fid_mean, 'COV': cov_mean, 'MMS': mms_mean}])
                 df = pd.concat([df, new_row], ignore_index=True)
