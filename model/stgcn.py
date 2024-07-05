@@ -153,6 +153,7 @@ class STGCN(nn.Module):
         x = F.avg_pool2d(x, x.size()[2:])
         x = x.view(N, M, -1, 1, 1).mean(dim=1)
         x = x.view(x.size(0), -1)
+       
         if feature_extractor:
             return x
         
@@ -222,7 +223,7 @@ class STGCN(nn.Module):
                 torch.save(self.state_dict(), os.path.join(self.output_directory, 'best_stgcn.pth'))
 
 
-            torch.save(self.state_dict(), os.path.join(self.output_directory, 'last_stgcn.pth'))
+        torch.save(self.state_dict(), os.path.join(self.output_directory, 'last_stgcn.pth'))
         plot_regressor_loss(self.epochs, train_losses, test_losses,self.output_directory)
         
     def score_error(self,true_scores,predicted_scores):
@@ -268,9 +269,8 @@ class STGCN(nn.Module):
                 true_score = input_tensor[2].item()
                 prediction = self(data)
                 predicted_score = prediction.item()
-                true_scores.append(true_score*100)
-                predicted_scores.append(predicted_score*100)
-            
+                true_scores.append(true_score)
+                predicted_scores.append(predicted_score)
                 print(f'Sample: {i}/{num_samples}, True Score: {true_score:.4f}, Predicted Score: {predicted_score:.4f}')
             plot_true_pred_scores(predicted_scores,true_scores,self.output_directory,title='train_scores')
 
@@ -291,8 +291,8 @@ class STGCN(nn.Module):
                 true_score = input_tensor[2].item()
                 prediction = self(data)
                 predicted_score = prediction.item()
-                true_scores.append(true_score*100)
-                predicted_scores.append(predicted_score*100)
+                true_scores.append(true_score)
+                predicted_scores.append(predicted_score)
                 print(f'Sample: {i}/{num_samples}, True Score: {true_score:.4f}, Predicted Score: {predicted_score:.4f}')
             plot_true_pred_scores(predicted_scores,true_scores,self.output_directory,title='test scores')
             self.square_plot(predicted_scores,true_scores)
