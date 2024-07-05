@@ -38,7 +38,7 @@ class REG(nn.Module):
         self.linear2 = nn.Linear(64, 16)
         self.linear3 = nn.Linear(16, 1)
 
-    def forward(self, x):
+    def forward(self, x,extract_feature=False):
         x = x.view(x.size(0), x.size(1), -1)
         x = x.permute(0, 2, 1)
         x = F.relu(self.conv1(x))
@@ -47,8 +47,13 @@ class REG(nn.Module):
         x = F.relu(self.conv4(x))
         x = F.relu(self.conv5(x))
         x = F.relu(self.conv6(x))
+        
         x = x.view(x.size(0), -1)
-        x = self.relu(self.linear0(x))
+        
+        x = self.linear0(x)
+        if extract_feature == True:
+            return x
+        
         x = self.relu(self.linear1(x))
         x = self.relu(self.linear2(x))
         x = self.sigmoid(self.linear3(x))
@@ -71,6 +76,7 @@ class REG(nn.Module):
             self.train()
             train_loss = 0.0
             for batch_idx, (data,_, score) in enumerate(train_loader):
+              
                 data, score = data.to(self.device), score.to(self.device)
                 optimizer.zero_grad()
                 output = self(data)
@@ -140,7 +146,8 @@ class REG(nn.Module):
             plot_true_pred_scores(predicted_scores,true_scores,self.output_directory,title='train_scores')
 
     def predict_scores(self, data_loader,device):
-       
+        device = self.device
+        self.to(device)
         num_samples = data_loader.dataset.__len__()
         true_scores = []
         predicted_scores = []
@@ -150,7 +157,7 @@ class REG(nn.Module):
             for i in range(num_samples):
                 input_tensor = data_loader.dataset[i]
                 data = input_tensor[0].unsqueeze(0).to(self.device)
-                true_score = input_tensor[1].item()
+                true_score = input_tensor[2].item()
                 prediction = self(data)
                 predicted_score = prediction.item()
                 true_scores.append(true_score*100)
