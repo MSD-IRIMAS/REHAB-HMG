@@ -6,12 +6,13 @@ import pandas as pd
 import numpy as np
 import argparse
 from utils.visualize import create_directory
-from dataset.dataset import Kimore, load_class
+from dataset.dataset import Kimore, load_data,load_class
 from sklearn.model_selection import train_test_split
 from model.cvae import CVAE
 from model.cvae_label import CVAEL
 from torch.utils.data import DataLoader,Subset
 import torch
+from utils.normalize import normalize_skeletons 
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -47,14 +48,14 @@ def get_args():
 
 
     parser.add_argument(
-        '--weight-rec',
+        '--wrec',
         help="Weight for the reconstruction loss.",
         type=float,
         default=0.99
     )
 
     parser.add_argument(
-        '--weight-kl',
+        '--wkl',
         help="Weight for the kl loss.",
         type=float,
         default=1e-3
@@ -108,18 +109,20 @@ if __name__ == "__main__":
     output_directory_generator = output_directory_dataset + args.generative_model + '/'
     create_directory(output_directory_generator)
 
-    output_directory_weights_losses = output_directory_generator + 'Wrec_' + str(args.weight_rec) + '_Wkl_' + str(args.weight_kl) + '/'
+    output_directory_weights_losses = output_directory_generator + 'Wrec_' + str(args.wrec) + '_Wkl_' + str(args.wkl) + '/'
     create_directory(output_directory_weights_losses)
 
     dataset_dir = 'data/' + args.dataset + '/'
     data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
-    dataset = Kimore(data,labels,scores)
-    train_indices, test_indices = train_test_split(range(len(dataset)), test_size=0.2, random_state=42)
-    train_dataset = Subset(dataset, train_indices)
-    test_dataset = Subset(dataset, test_indices)
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
-    # dataloader = DataLoader(dataset,batch_size=16,shuffle = True)
+    # data,labels,scores = load_data(root_dir=dataset_dir)
+    xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
+    xtrain,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtrain)
+    train_set = Kimore(xtrain,ytrain,strain)
+    train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
+    xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+    test_set = Kimore(xtest,ytest,stest)
+    test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
+
 
     if args.data_split == 'all':
         for _run in range(args.runs):
@@ -136,8 +139,8 @@ if __name__ == "__main__":
                     generator = CVAE(output_directory=output_directory_run,
                     epochs=args.epochs,
                     device=args.device,
-                    w_rec=args.weight_rec,
-                    w_kl=args.weight_kl)
+                    w_rec=args.wrec,
+                    w_kl=args.wkl)
                     # generator.train_function(dataloader,device=args.device)
                     # generator.visualize_latent_space(dataloader,device=args.device)
                     # generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
@@ -156,11 +159,11 @@ if __name__ == "__main__":
                     generator = CVAE(output_directory=output_directory_skeletons_class,
                     epochs=args.epochs,
                     device=args.device,
-                    w_rec=args.weight_rec,
-                    w_kl=args.weight_kl)
+                    w_rec=args.wrec,
+                    w_kl=args.wkl)
                     # generator.train_function(train_loader,device=args.device)
                     # generator.visualize_latent_space(train_loader,device=args.device)
-                    # generator.generate_samples_from_posterior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
+                  
                     generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
 
 

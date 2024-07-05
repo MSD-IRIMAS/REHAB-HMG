@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader,Subset
 from model.stgcn import STGCN
 import torch
-from utils.normalize import normalize_skeletons, normalize_test_set
+from utils.normalize import normalize_skeletons
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -84,22 +84,14 @@ if __name__ == "__main__":
     output_directory_gen_models = output_directory_results + 'stgcn/'
     create_directory(output_directory_gen_models)
 
-    output_directory_dataset = output_directory_gen_models + args.dataset + '/'
-    create_directory(output_directory_dataset)
-
-    output_directory_generator = output_directory_dataset + args.stgcn + '/'
-    create_directory(output_directory_generator)
-
-
-
     dataset_dir = 'data/' + args.dataset + '/'
     data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
    
     xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
     xtrain= normalize_skeletons(xtrain)
-    train_set = Kimore(xtrain,ytrain,strain)
+    train_set,min_X, max_X,min_Y,max_Y, min_Z,max_Z = Kimore(xtrain,ytrain,strain)
     train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
-    xtest= normalize_test_set(xtest)
+    xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
     test_set = Kimore(xtest,ytest,stest)
     test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
 
@@ -108,8 +100,7 @@ if __name__ == "__main__":
 
                 output_directory_run = output_directory_gen_models + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
-                output_directory_skeletons = output_directory_run + 'generated_samples/'
-                create_directory(output_directory_skeletons)
+    
 
                 output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
                 create_directory(output_directory_skeletons_class)
@@ -120,8 +111,7 @@ if __name__ == "__main__":
 
                 output_directory_run = output_directory_gen_models + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
-                output_directory_skeletons = output_directory_run + 'generated_samples/'
-                create_directory(output_directory_skeletons)
+              
 
                 output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
                 create_directory(output_directory_skeletons_class)
@@ -131,7 +121,7 @@ if __name__ == "__main__":
                     device=args.device,
                     edge_importance_weighting=True)
                 # model.features_extractor(device=args.device,data_loader=train_loader)
-                model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
+                # model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
                 model.predict_scores(test_loader,args.device)
                 model.plot_train_scores(device= args.device,train_loader=train_loader)
                 # model.test_predictions(args.device)
