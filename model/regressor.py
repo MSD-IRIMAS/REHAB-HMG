@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolu
 
 
 class REG(nn.Module):
-    def __init__(self, device,output_directory,filters=128, latent_dimension=16,lr=1e-4,epochs=2000):
+    def __init__(self, device,output_directory,filters=128, latent_dimension=16,lr=1e-4,epochs=1500):
         super(REG, self).__init__()
         self.filters = filters
         self.lr = lr
@@ -53,15 +53,15 @@ class REG(nn.Module):
         x = self.linear0(x)
         if extract_feature == True:
             return x
-        
+        x = self.relu(x)
         x = self.relu(self.linear1(x))
         x = self.relu(self.linear2(x))
-        x = self.sigmoid(self.linear3(x))
+        x = self.sigmoid(self.linear3(x) )
         return x
     def loss(self,score,output):
 
         criterion = nn.MSELoss()
-        mse_loss=criterion(output,score)
+        mse_loss=criterion(score,output)
         return mse_loss
 
     def train_fun(self, device, train_loader, test_loader):
@@ -160,8 +160,8 @@ class REG(nn.Module):
                 true_score = input_tensor[2].item()
                 prediction = self(data)
                 predicted_score = prediction.item()
-                true_scores.append(true_score*100)
-                predicted_scores.append(predicted_score*100)
+                true_scores.append((true_score*100)+1)
+                predicted_scores.append((predicted_score*100)+1)
 
                 print(f'Sample: {i+1}/{num_samples}, True Score: {true_score:.4f}, Predicted Score: {predicted_score:.4f}')
         rmse = mean_squared_error(true_scores,predicted_scores)
