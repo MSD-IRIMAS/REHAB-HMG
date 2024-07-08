@@ -127,7 +127,7 @@ if __name__ == "__main__":
     if args.data_split == 'all':
         for _run in range(args.runs):
 
-                output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
+                output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
                 output_directory_skeletons = output_directory_run + 'generated_samples/'
                 create_directory(output_directory_skeletons)
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     elif args.data_split == 'split':
         for _run in range(args.runs):
 
-                output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
+                output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
                 output_directory_skeletons = output_directory_run + 'generated_samples/'
                 create_directory(output_directory_skeletons)
