@@ -145,19 +145,19 @@ if __name__ == "__main__":
 
                 
 
-        #         generator.train_function(train_loader, args.device)
-        #         test_loss = generator.evaluate_function(test_loader, args.device)
-        #         results.append(test_loss)
-        #         print(f'Fold {fold_idx} Test Loss: {test_loss}')
+                generator.train_function(train_loader, args.device)
+                test_loss = generator.evaluate_function(test_loader, args.device)
+                results.append(test_loss)
+                print(f'Fold {fold_idx} Test Loss: {test_loss}')
 
 
-        # average_test_loss = np.mean(results)
-        # print(f'Average Test Loss: {average_test_loss}')
+        average_test_loss = np.mean(results)
+        print(f'Average Test Loss: {average_test_loss}')
 
 
 
-                generator.generate_samples_from_prior(args.device,args.class_index,output_directory_skeletons,test_loader)
-                generator.generate_samples_from_posterior(args.device,args.class_index,output_directory_skeletons,test_loader)
+                # generator.generate_samples_from_prior(args.device,args.class_index,output_directory_skeletons,test_loader)
+                # generator.generate_samples_from_posterior(args.device,args.class_index,output_directory_skeletons,test_loader)
 
 
 

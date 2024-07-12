@@ -161,8 +161,8 @@ if __name__ == "__main__":
                     device=args.device,
                     w_rec=args.wrec,
                     w_kl=args.wkl)
-                    # generator.train_function(train_loader,device=args.device)
-                    # generator.visualize_latent_space(train_loader,device=args.device)
+                    generator.train_function(train_loader,device=args.device)
+                    generator.visualize_latent_space(train_loader,device=args.device)
                   
                     generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
 

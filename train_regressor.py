@@ -157,5 +157,5 @@ if __name__ == "__main__":
                     
                 )
                 model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
-                # model.predict_scores(test_loader,args.device)
-                # model.plot_train_scores(device= args.device,train_loader=train_loader)
+                model.predict_scores(test_loader,args.device)
+                model.plot_train_scores(device= args.device,train_loader=train_loader)
