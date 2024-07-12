@@ -12,6 +12,7 @@ from model.stgcn import STGCN
 import argparse
 from scipy.linalg import sqrtm, eig
 from model.regressor import REG
+from model.cvae import CVAE
 from numpy.lib import scimath as sc
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import NearestNeighbors
@@ -23,7 +24,8 @@ from utils.normalize import normalize_skeletons
 from utils.metrics import FeatureExtractor
 from torch.utils.data import DataLoader,Subset
 from sklearn import neighbors
-from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error as rmse
+from sklearn.metrics import mean_absolute_error as mae
 import matplotlib.pyplot as plt
 # Set random seeds
 random.seed(42)
@@ -122,7 +124,7 @@ if __name__ == "__main__":
     output_directory_weights_losses = output_directory_generator + 'Wrec_' + str(args.wrec) + '_Wkl_' + str(args.wkl) + '/'
     create_directory(output_directory_weights_losses)
 
-    output_directory_run = args.output_directory_weights_losses + 'run_' + str(args.runs) + '/'
+    output_directory_run = output_directory_weights_losses + 'run_' + str(args.runs) + '/'
     create_directory(output_directory_run)
 
     output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
@@ -156,11 +158,11 @@ if __name__ == "__main__":
                     strain=strain.squeeze(1)
                     regressor.fit(train_data, strain)
                     y_pred = regressor.predict(test_features)
-                    print(y_pred)
-                    print('------------------------------------------------------------------------')
-                    print(stest.squeeze(1))
-                    print('------------------------------------------------------------------------')
-                    print(mean_squared_error(stest,y_pred))
+                    stest = stest.squeeze(1)
+                    for i in range(len(y_pred)): 
+                        print(f'true score {stest[i]:.2f}, predicted score {y_pred[i]:.2f}')
+                    print(rmse(y_pred,stest))
+                    print('MAE',mae(y_pred,stest))
 
 
         elif args.regression_models == 'REG':
@@ -174,15 +176,19 @@ if __name__ == "__main__":
                     regressor = KNeighborsTimeSeriesRegressor(distance="euclidean",n_neighbors=5)
                     strain=strain.squeeze(1)
                     regressor.fit(train_data, strain)
-                    print('reg fit')
+                    
                     y_pred = regressor.predict(test_features)
-                    print(y_pred)
-                    print('------------------------------------------------------------------------')
-                    print(stest.squeeze(1))
-                    print('------------------------------------------------------------------------')
-                    print(mean_squared_error(stest,y_pred))
+                    stest = stest.squeeze(1)
+                    for i in range(len(y_pred)): 
+                        print(f'true score {stest[i]:.2f}, predicted score {y_pred[i]:.2f}')
+                    rmse_score = rmse(stest,y_pred)
+                    print(rmse_score)
+                    print('MAE',mae(y_pred,stest))
+
+                    
      
     elif args.on == 'generated':
+   
         weights_loss = {
                 'wrec' : args.wrec,
                 'wkl' : args.wkl,}
@@ -191,14 +197,17 @@ if __name__ == "__main__":
                     device=args.device,
                     w_rec=weights_loss['wrec'],
                     w_kl=weights_loss['wkl'])
-        generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=reg_run_dir_class,dataloader=test_loader)
-        gen_set = Kimore(generated_samples,labels,gen_scores)
-        gen_loader = DataLoader(gen_set,batch_size=10,shuffle =True)
+        
 
         if args.regression_models == 'STGCN':
                     stgcn_directory = output_directory_results + 'STGCN/'
                     stgcn_run_dir_class = stgcn_directory + 'run_' + str(args.runs) +'/class_'+str(args.class_index)
                     stgcn_run_dir = stgcn_run_dir_class + '/best_stgcn.pth'
+
+                    generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=stgcn_run_dir_class,dataloader=test_loader)
+                    gen_set = Kimore(generated_samples,labels,gen_scores)
+                    gen_loader = DataLoader(gen_set,batch_size=10,shuffle =True)
+
                     feature_extractor_stgcn = FeatureExtractor(model_name=args.regression_models, model_path=stgcn_run_dir, device=args.device)
                     train_data = feature_extractor_stgcn.extract_features(train_loader)
                     test_features= feature_extractor_stgcn.extract_features(gen_loader)
@@ -206,17 +215,20 @@ if __name__ == "__main__":
                     strain=strain.squeeze(1)
                     regressor.fit(train_data, strain)
                     y_pred = regressor.predict(test_features)
-                    print(y_pred)
-                    print('------------------------------------------------------------------------')
-                    print(gen_scores.squeeze(1))
-                    print('------------------------------------------------------------------------')
-                    print(mean_squared_error(gen_scores,y_pred))
+                 
+                    for i in range(len(y_pred)): 
+                        print(f'true score {gen_scores[i]:.2f}, predicted score {y_pred[i]:.2f}')
+                    print(rmse(y_pred,gen_scores))
+                    print('MAE',mae(y_pred,gen_scores))
 
 
         elif args.regression_models == 'REG':
                     regressor_directory = output_directory_results + 'REG/'
                     reg_run_dir_class = regressor_directory + 'run_' + str(args.runs) +'/class_'+str(args.class_index)
                     reg_run_dir = reg_run_dir_class + '/best_regressor.pth'
+                    generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=reg_run_dir_class,dataloader=test_loader)  
+                    gen_set = Kimore(generated_samples,labels,gen_scores)
+                    gen_loader = DataLoader(gen_set,batch_size=10,shuffle =True)
                                 
                     feature_extractor_reg = FeatureExtractor(model_name=args.regression_models, model_path=reg_run_dir, device=args.device)
                     train_data = feature_extractor_reg.extract_features(train_loader)
@@ -224,13 +236,16 @@ if __name__ == "__main__":
                     regressor = KNeighborsTimeSeriesRegressor(distance="euclidean",n_neighbors=5)
                     strain=strain.squeeze(1)
                     regressor.fit(train_data, strain)
-                    print('reg fit')
+                  
                     y_pred = regressor.predict(test_features)
-                    print(y_pred)
-                    print('------------------------------------------------------------------------')
-                    print(gen_scores.squeeze(1))
-                    print('------------------------------------------------------------------------')
-                    print(mean_squared_error(gen_scores,y_pred))
+                
+                    for i in range(len(y_pred)): 
+                        
+                        print(f'true score {gen_scores[i]:.2f}, predicted score {y_pred[i]:.2f}')
+                        
+                    print(rmse(y_pred,gen_scores))
+                    print('MAE',mae(y_pred,gen_scores))
+
 
 
 
