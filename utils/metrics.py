@@ -65,20 +65,42 @@ class FID:
         
         real_latent = self.feature_extractor.extract_features(data_loader_x)
         gen_latent = self.feature_extractor.extract_features(data_loader_y)
+        print("NaNs in real features:", np.isnan(real_latent).any())
+        print("Infinities in real features:", np.isinf(real_latent).any())
+        print("NaNs in real features:", np.isnan(gen_latent).any())
+        print("Infinities in real features:", np.isinf(gen_latent).any())
 
         mean_real = np.mean(real_latent, axis=0)
         mean_gen = np.mean(gen_latent, axis=0)
 
+        print("NaNs in real mean:", np.isnan(mean_real).any())
+        print("Infinities in real mean:", np.isinf(mean_real).any())
+        print("NaNs in generated mean:", np.isnan(mean_gen).any())
+        print("Infinities in generated mean:", np.isinf(mean_gen).any())
+
+
+
+
+
         cov_real = np.cov(real_latent, rowvar=False)
         cov_gen = np.cov(gen_latent, rowvar=False)
+        print("NaNs in real covariance:", np.isnan(cov_real).any())
+        print("Infinities in real covariance:", np.isinf(cov_real).any())
+        print("NaNs in generated covariance:", np.isnan(cov_gen).any())
+        print("Infinities in generated covariance:", np.isinf(cov_gen).any())
 
-        epsilon = 1e-6
+                
+
+        cov_gen = (cov_gen + cov_gen.T) / 2
+        epsilon = 1e-10
         mean_gen += epsilon 
         cov_gen += epsilon * np.eye(cov_gen.shape[0])
+        eigenvalues = np.linalg.eigvals(cov_gen)
 
         diff_means = np.sum(np.square(mean_real - mean_gen))
 
         cov_prod = sqrtm(cov_real.dot(cov_gen))
+        
 
         if np.iscomplexobj(cov_prod):
             cov_prod = cov_prod.real
@@ -86,6 +108,7 @@ class FID:
         fid = diff_means + np.trace(cov_real + cov_gen - 2.0 * cov_prod)
         
         print(fid)
+        print(np.all(eigenvalues >= 0))
         return fid
 
 class Coverage:
