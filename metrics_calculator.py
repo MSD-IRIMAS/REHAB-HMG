@@ -116,10 +116,29 @@ if __name__ == "__main__":
     test_set = Kimore(xtest,ytest,stest)
     test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
 
-    output_directory_run = args.output_directory + 'run_' + str(args.runs) + '/'
+    # output_directory_run = args.output_directory + 'run_' + str(args.runs) + '/'
+    # create_directory(output_directory_run)
+    # output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
+    # create_directory(output_directory_skeletons_class)
+    output_directory_gen_models = args.output_directory + 'Generative_models/'
+    create_directory(output_directory_gen_models)
+
+    output_directory_dataset = output_directory_gen_models + args.dataset + '/'
+    create_directory(output_directory_dataset)
+
+    output_directory_generator = output_directory_dataset + args.generative_model + '/'
+    create_directory(output_directory_generator)
+
+    output_directory_weights_losses = output_directory_generator + 'Wrec_' + str(args.wrec) + '_Wkl_' + str(args.wkl) + '/'
+    create_directory(output_directory_weights_losses)
+    output_directory_run = output_directory_weights_losses + 'run_' + str(args.runs) + '/'
     create_directory(output_directory_run)
+    output_directory_skeletons = output_directory_run + 'generated_samples/'
+    create_directory(output_directory_skeletons)
+
     output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
     create_directory(output_directory_skeletons_class)
+    
 
 
 
@@ -180,7 +199,7 @@ if __name__ == "__main__":
                 df = pd.read_csv(stgcn_directory + 'metrics_results_generated.csv')
             else:
                 df = pd.DataFrame(columns=['class','FID','COV','MMS'])
-            
+            print(output_directory_skeletons_class)
             #generate samples 
             generator = CVAE(output_directory=output_directory_skeletons_class,
                     device=args.device,
@@ -264,7 +283,7 @@ if __name__ == "__main__":
             density_mean = np.mean(density_score)
 
 
-            apd_score = apd_calculator_reg.calculate_apd(gen_loader)
+            apd_score = apd_calculator_reg.calculate_apd(test_loader)
             apd_mean = np.mean(apd_score)
             if args.class_index in df['class'].values:
                 df.loc[df['class'] == args.class_index, 'FID'] = fid_mean
