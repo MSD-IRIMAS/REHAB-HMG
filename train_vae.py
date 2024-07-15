@@ -1,3 +1,6 @@
+#-------------------------------------
+# ------------------------This files train the Action+score conditioned VAE---------------------------------------
+
 def warn(*args, **kwargs):
     pass
 import warnings
@@ -8,8 +11,8 @@ import argparse
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data,load_class
 from sklearn.model_selection import train_test_split
-from model.cvae import CVAE
-from model.cvae_label import CVAEL
+from model.svae import SVAE
+from model.AS_CVAE import ASCVAE
 from torch.utils.data import DataLoader,Subset
 import torch
 from utils.normalize import normalize_skeletons 
@@ -22,8 +25,8 @@ def get_args():
         '--generative-model',
         help="Which generative model to use .",
         type=str,
-        choices=['CVAE','CVAEL'],
-        default='CVAE',
+        choices=['ASCVAE','SVAE'],
+        default='ASCVAE',
     )
 
     parser.add_argument(
@@ -51,7 +54,7 @@ def get_args():
         '--wrec',
         help="Weight for the reconstruction loss.",
         type=float,
-        default=0.99
+        default=0.999
     )
 
     parser.add_argument(
@@ -103,7 +106,7 @@ if __name__ == "__main__":
     output_directory_gen_models = output_directory_results + 'Generative_models/'
     create_directory(output_directory_gen_models)
 
-    output_directory_dataset = output_directory_gen_models + args.dataset + '/'
+    output_directory_dataset = output_directory_gen_models + 'Score+Action_conditioned/'
     create_directory(output_directory_dataset)
 
     output_directory_generator = output_directory_dataset + args.generative_model + '/'
@@ -113,19 +116,10 @@ if __name__ == "__main__":
     create_directory(output_directory_weights_losses)
 
     dataset_dir = 'data/' + args.dataset + '/'
-    data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
-    # data,labels,scores = load_data(root_dir=dataset_dir)
-    xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
-    xtrain,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtrain)
-    train_set = Kimore(xtrain,ytrain,strain)
-    train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
-    xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
-    test_set = Kimore(xtest,ytest,stest)
-    test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
+    
 
 
-    if args.data_split == 'all':
-        for _run in range(args.runs):
+    for _run in range(args.runs):
 
                 output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
@@ -135,35 +129,39 @@ if __name__ == "__main__":
                 output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
                 create_directory(output_directory_skeletons_class)
 
-                if args.generative_model == 'CVAE':
-                    generator = CVAE(output_directory=output_directory_run,
-                    epochs=args.epochs,
-                    device=args.device,
-                    w_rec=args.wrec,
-                    w_kl=args.wkl)
-                    # generator.train_function(dataloader,device=args.device)
-                    # generator.visualize_latent_space(dataloader,device=args.device)
-                    # generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)  
-    elif args.data_split == 'split':
-        for _run in range(args.runs):
-
-                output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
-                create_directory(output_directory_run)
-                output_directory_skeletons = output_directory_run + 'generated_samples/'
-                create_directory(output_directory_skeletons)
-
-                output_directory_skeletons_class = output_directory_run + 'class_' + str(args.class_index) + '/'
-                create_directory(output_directory_skeletons_class)
-
-                if args.generative_model == 'CVAE':
-                    generator = CVAE(output_directory=output_directory_skeletons_class,
-                    epochs=args.epochs,
-                    device=args.device,
-                    w_rec=args.wrec,
-                    w_kl=args.wkl)
-                    generator.train_function(train_loader,device=args.device)
+                if args.generative_model == 'ASCVAE':
+                    data,labels,scores = load_data(root_dir=dataset_dir)
+                    xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
+                    xtrain,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtrain)
+                    train_set = Kimore(xtrain,ytrain,strain)
+                    train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
+                    xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                    test_set = Kimore(xtest,ytest,stest)
+                    test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
+                    generator = ASCVAE(output_directory=output_directory_run,
+                                        epochs=args.epochs,
+                                        device=args.device,
+                                        w_rec=args.wrec,
+                                        w_kl=args.wkl)
+                    generator.train_function(dataloader=train_loader,device=args.device)
                     generator.visualize_latent_space(train_loader,device=args.device)
-                  
                     generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
+                elif args.generative_model == 'SVAE':
+                    data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
+                 
+                    xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
+                    xtrain,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtrain)
+                    train_set = Kimore(xtrain,ytrain,strain)
+                    train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
+                    xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                    test_set = Kimore(xtest,ytest,stest)
+                    test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
+                    generator = SVAE(output_directory=output_directory_skeletons_class,
+                                        epochs=args.epochs,
+                                        device=args.device,
+                                        w_rec=args.wrec,
+                                        w_kl=args.wkl)
+                    generator.train_function(train_loader,device=args.device)
+                    generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=test_loader)  
 
 
