@@ -123,10 +123,10 @@ if __name__ == "__main__":
 
                 output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
-                output_directory_skeletons = output_directory_run + 'generated_samples/'
+                output_directory_skeletons = output_directory_run + 'class_'+ str(args.class_index) + '/'
                 create_directory(output_directory_skeletons)
 
-                output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
+                output_directory_skeletons_class = output_directory_skeletons + 'generated_samples/' 
                 create_directory(output_directory_skeletons_class)
 
                 if args.generative_model == 'ASCVAE':
@@ -156,7 +156,7 @@ if __name__ == "__main__":
                     xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
                     test_set = Kimore(xtest,ytest,stest)
                     test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
-                    generator = SVAE(output_directory=output_directory_skeletons_class,
+                    generator = SVAE(output_directory=output_directory_skeletons,
                                         epochs=args.epochs,
                                         device=args.device,
                                         w_rec=args.wrec,

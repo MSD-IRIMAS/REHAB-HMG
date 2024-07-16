@@ -14,7 +14,10 @@ from model.vae import VAE
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader,Subset
 import torch
-from utils.normalize import normalize_skeletons 
+from utils.normalize import normalize_skeletons, unnormalize_generated_skeletons
+from utils.visualize import plot_skel
+
+
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -81,6 +84,13 @@ def get_args():
         type=int,
         default=0
     )
+    
+    parser.add_argument(
+        '--samples',
+        help='how many samples to generate',
+        type = int,
+        default= 10,
+    )
 
     args = parser.parse_args()
 
@@ -111,9 +121,9 @@ if __name__ == "__main__":
     for _run in range(args.runs):
             output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
             create_directory(output_directory_run)
-            output_directory_skeletons = output_directory_run + 'generated_samples/'
+            output_directory_skeletons = output_directory_run  + 'class_' + str(args.class_index) + '/'
             create_directory(output_directory_skeletons)
-            output_directory_skeletons_class = output_directory_skeletons + 'class_' + str(args.class_index) + '/'
+            output_directory_skeletons_class = output_directory_skeletons + 'generated_samples/' 
             create_directory(output_directory_skeletons_class)
           
             if args.generative_model == 'CVAEL':
@@ -128,21 +138,28 @@ if __name__ == "__main__":
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
             #------------------------Initialize the generative model
-                generator = CVAEL(output_directory=output_directory_run,
+                generator = CVAEL(output_directory=output_directory_skeletons,
                 epochs=args.epochs,
                 device=args.device)
                 generator.train_function(train_loader,device=args.device)
                 generator.visualize_latent_space(train_loader,device=args.device)
-                # generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)    
-                # generator.generate_samples_from_posterior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class,dataloader=test_loader)    
+                generated_samples = generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)    
+                for i in range(len(generated_samples)):
+                    unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                    plot_skel(unnormalized_sample,output_directory_skeletons_class,title=f'sample_{i}')
+
             elif args.generative_model == 'VAE':
                 data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
                 xtrain,xtest,ytrain,ytest,strain,stest= train_test_split(data,labels,scores,test_size=0.2,random_state=42)
                 xtrain,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtrain)
                 train_set = Kimore(xtrain,ytrain,strain)
                 train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
-                xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
                 generator = VAE(output_directory=output_directory_run,epochs=args.epochs,device=args.device)
-                generator.train_function(dataloader=train_loader,device=args.device)
+                # generator.train_function(dataloader=train_loader,device=args.device)
+                generated_samples = generator.generate_samples_from_prior(device=args.device,gif_directory=output_directory_skeletons_class,num_samples=args.samples)
+                for i in range(len(generated_samples)):
+                    unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                    plot_skel(unnormalized_sample,output_directory_skeletons_class,title=f'sample_{i}')
