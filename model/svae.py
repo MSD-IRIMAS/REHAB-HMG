@@ -251,7 +251,7 @@ class SVAE(nn.Module):
            
                 generated_sample = self.decoder(sample, score).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
-                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                # unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
              
                 
         generated_samples_array = np.concatenate(generated_samples, axis=0)

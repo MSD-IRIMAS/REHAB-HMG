@@ -257,8 +257,8 @@ class ASCVAE(nn.Module):
                 generated_samples.append(generated_sample)
                 true_samples.append(data.cpu().detach().numpy())  
                 scores.append(score_value * 100.0)
-                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                plot_skel(unnormalized_sample,gif_directory,title='post_'+'score='+str(score))
+                # unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                # plot_skel(unnormalized_sample,gif_directory,title='post_'+'score='+str(score))
            
             generated_samples_array = np.concatenate(generated_samples, axis=0)
           
@@ -290,7 +290,7 @@ class ASCVAE(nn.Module):
                 c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
                 generated_sample = self.decoder(sample, c, score).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
-                unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+                # unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
              
                 
         generated_samples_array = np.concatenate(generated_samples, axis=0)
