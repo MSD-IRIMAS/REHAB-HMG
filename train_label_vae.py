@@ -158,7 +158,7 @@ if __name__ == "__main__":
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
                 generator = VAE(output_directory=output_directory_run,epochs=args.epochs,device=args.device)
-                # generator.train_function(dataloader=train_loader,device=args.device)
+                generator.train_function(dataloader=train_loader,device=args.device)
                 generated_samples = generator.generate_samples_from_prior(device=args.device,gif_directory=output_directory_skeletons_class,num_samples=args.samples)
                 for i in range(len(generated_samples)):
                     unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
