@@ -19,14 +19,7 @@ map_metric_names = {
     "COV": "Coverage",
    
     "Density": "Density",
-    # "fid-mean" : "FID",
-    # "wpd-mean" : "WPD",
-    # "mms-mean" : "MMS",
-    # "aog-mean" : "AOG",
-    # "coverage-mean" : "Coverage",
-    # "acpd-mean" : "ACPD",
-    # "apd-mean" : "APD",
-    # "density-mean" : "Density",
+    "APD":"APD"
 }
 
 
@@ -57,9 +50,7 @@ def _regisrer_radar_projection(
 
     class RadarTransform(PolarAxes.PolarTransform):
         def transform_path_non_affine(self, path):
-            # Paths with non-unit interpolation steps correspond to gridlines,
-            # in which case we force interpolation (to defeat PolarTransform's
-            # autoconversion to circular arcs).
+            
             if path._interpolation_steps > 1:
                 path = path.interpolated(numberOfMetrics)
             return Path(self.transform(path.vertices), path.codes)
@@ -188,31 +179,6 @@ def _transform_metrics(df_metrics, usedMetrics):
 
     return df_metrics
 
-
-# def _transform_density_metric(df_metrics):
-
-#     df_density = df_metrics[["Model","density-mean"]].copy()
-
-#     model_names = list(df_metrics["Model"])
-#     model_names.remove("Real")
-
-#     df_density_real = df_density.loc[df_density["Model"] == "Real"]
-#     _density_real = df_density_real["density-mean"].iloc[0]
-
-#     for model_name in model_names:
-#         df_density_row = df_density.loc[df_density["Model"] == model_name]
-#         _density = df_density_row["density-mean"].iloc[0]
-
-#         if _density > _density_real:
-#             df_metrics.loc[df_metrics["Model"] == model_name, "fid-mean"] = 1.0 - (_density - _density_real)
-#         else:
-#             df_metrics.loc[df_metrics["Model"] == model_name, "fid-mean"] = 1.0 + (_fid_real - _fid)
-
-#     df_metrics.loc[df_metrics["Model"] == "Real", "fid-mean"] = 1.0
-
-#     return df_metrics
-
-
 def plot_metrics_on_polygone(
     df_metrics,
     usedMetrics: list = None,
@@ -291,15 +257,17 @@ def plot_metrics_on_polygone(
     ax.set_varlabels([map_metric_names[_metric] for _metric in metrics])
     ax.legend(loc="upper right", bbox_to_anchor=(1.1, 1.15))
 
-    fig.savefig(title + ".pdf")
+    fig.savefig(title + ".png")
 
 
 if __name__ == "__main__":
 
-    csv_file = "../metrics.csv"
-    title = "Metrics_4"
+    for i in range (0,5):
 
-    plot_metrics_on_polygone(
-        df_metrics=pd.read_csv(csv_file),
-        title=title,
-    )
+        csv_file = f"../results/regression_models/STGCN/class_{i}.csv"
+        title = f"../results/regression_models/STGCN/polyone_reg_class_{i}"
+
+        plot_metrics_on_polygone(
+            df_metrics=pd.read_csv(csv_file),
+            title=title,
+        )
