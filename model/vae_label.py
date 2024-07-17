@@ -272,22 +272,18 @@ class CVAEL(nn.Module):
         self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
         
         generated_samples = []
-        generated_samples_unnormalized = []
+       
         
         for i in range(17):
             with torch.no_grad():
                 sample = torch.randn(1,self.latent_dimension).to(device)
-               
                 c = torch.eye(self.num_classes)[class_index].unsqueeze(0).to(device)
                 generated_sample = self.decoder(sample,c ).cpu().double().detach().numpy()
                 generated_samples.append(generated_sample)
-                # unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
-                # generated_samples_unnormalized.append(unnormalized_sample)
-        # generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)   
-        generated_samples_array = np.concatenate(generated_samples, axis=0)
+                generated_samples_array = np.concatenate(generated_samples, axis=0)
         np.save(os.path.join(gif_directory,'generated_samples_prior.npy'), generated_samples_array)
         return generated_samples_array
-        # np.save(os.path.join(gif_directory,'generated_samples_unnormalized_prior.npy'), generated_samples_unnormalized)
+     
 
 
 
