@@ -138,15 +138,15 @@ if __name__ == "__main__":
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
             #------------------------Initialize the generative model
-                generator = CVAEL(output_directory=output_directory_skeletons,
+                generator = CVAEL(output_directory=output_directory_run,
                 epochs=args.epochs,
                 device=args.device)
                 generator.train_function(train_loader,device=args.device)
                 generator.visualize_latent_space(train_loader,device=args.device)
-                generated_samples = generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)    
-                for i in range(len(generated_samples)):
-                    unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
-                    plot_skel(unnormalized_sample,output_directory_skeletons_class,title=f'sample_{i}')
+                # generated_samples = generator.generate_samples_from_prior(device = args.device,class_index=args.class_index,gif_directory=output_directory_skeletons_class)    
+                # for i in range(len(generated_samples)):
+                #     unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                #     plot_skel(unnormalized_sample,output_directory_skeletons_class,title=f'sample_{i}')
 
             elif args.generative_model == 'VAE':
                 data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
@@ -157,9 +157,11 @@ if __name__ == "__main__":
                 xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
-                generator = VAE(output_directory=output_directory_run,epochs=args.epochs,device=args.device)
+
+
+                generator = VAE(output_directory=output_directory_skeletons,epochs=args.epochs,device=args.device)
                 generator.train_function(dataloader=train_loader,device=args.device)
-                generated_samples = generator.generate_samples_from_prior(device=args.device,gif_directory=output_directory_skeletons_class,num_samples=args.samples)
-                for i in range(len(generated_samples)):
-                    unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
-                    plot_skel(unnormalized_sample,output_directory_skeletons_class,title=f'sample_{i}')
+                # generated_samples = generator.generate_samples_from_prior(device=args.device,gif_directory=output_directory_skeletons_class,num_samples=args.samples)
+                # for i in range(len(generated_samples)):
+                #     unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                #     plot_skel(unnormalized_sample,output_directory_skeletons_class,title=f'sample_{i}')
