@@ -27,7 +27,7 @@ random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 torch.backends.cudnn.deterministic = True  # If using CUDA
-torch.backends.cudnn.benchmark 
+torch.backends.cudnn.benchmark = False
 
 
 
@@ -156,8 +156,8 @@ if __name__ == "__main__":
 
 
                 train_set = Kimore(xtrain,ytrain,strain)
-                train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
-                noisy_loader = DataLoader(noisy_set,batch_size=16,shuffle=True)
+                train_loader = DataLoader(train_set,batch_size=16,shuffle =False)
+                noisy_loader = DataLoader(noisy_set,batch_size=16,shuffle=False)
                 xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
@@ -169,15 +169,12 @@ if __name__ == "__main__":
 
                 output_directory_skeletons_class = output_directory_run + 'class_' + str(class_index) + '/'
                 create_directory(output_directory_skeletons_class)
-                weights_loss = {
-                            'wrec' : args.wrec,
-                            'wkl' : args.wkl,}
-                # Define a function to get the generator based on the model type
+
                 def get_generator():
                         if args.generative_model == 'CVAEL':
-                                generator= CVAEL(output_directory=output_directory_skeletons_class, device=args.device,epochs=2000)
-                                generated_samples = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,num_samples=len(xtrain))
-                                test_generated_samples = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,num_samples=len(xtest))
+                                generator= CVAEL(output_directory=output_directory_run, device=args.device,epochs=2000)
+                                generated_samples = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,num_samples=len(xtrain),class_index=class_index)
+                                test_generated_samples = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,num_samples=len(xtest),class_index=class_index)
                                 return generated_samples,test_generated_samples 
                         
                         

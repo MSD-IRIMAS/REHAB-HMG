@@ -27,7 +27,7 @@ random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 torch.backends.cudnn.deterministic = True  # If using CUDA
-torch.backends.cudnn.benchmark 
+torch.backends.cudnn.benchmark = False
 
 
 
@@ -156,8 +156,8 @@ if __name__ == "__main__":
                 noisy_set = Kimore(noisy_data,ytrain,strain)
 
                 train_set = Kimore(xtrain,ytrain,strain)
-                train_loader = DataLoader(train_set,batch_size=16,shuffle =True)
-                noisy_loader = DataLoader(noisy_set,batch_size=16,shuffle=True)
+                train_loader = DataLoader(train_set,batch_size=16,shuffle =False)
+                noisy_loader = DataLoader(noisy_set,batch_size=16,shuffle=False)
                 xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
@@ -186,24 +186,6 @@ if __name__ == "__main__":
                                 test_generated_samples,test_gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_run,dataloader=test_loader,class_index=class_index)
                                 return generated_samples,gen_scores,test_generated_samples,test_gen_scores 
 
-
-
-                        elif args.generative_model == 'VAE':
-                                generator= VAE(output_directory=output_dir, device=device, w_rec=weights_loss['wrec'], w_kl=weights_loss['wkl'],epochs=2000)
-                                generated_samples = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,num_samples=len(train_loader))
-                                test_generated_samples = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,num_samples=len(test_loader))
-                                return generated_samples,test_generated_samples 
-
-
-
-                        # elif args.generative_model == 'CVAEL':
-                        #         generator= CVAEL(output_directory=output_dir, device=device, w_rec=weights_loss['wrec'], w_kl=weights_loss['wkl'])
-                        #         generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=train_loader,class_index=class_index)
-                        #         test_generated_samples,test_gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=test_loader,class_index=class_index)
-                        #         return generated_samples,gen_scores,test_generated_samples,test_gen_scores 
-                        # else:
-                        #         raise ValueError(f"Unknown generative model type: {args.generative_model}")
-
             
               
                 generated_samples, gen_scores, test_generated_samples,test_gen_scores  = get_generator(args.generative_model, output_directory_skeletons_class, args.device)
@@ -215,44 +197,7 @@ if __name__ == "__main__":
                 gen_set = Kimore(test_generated_samples, labels, test_gen_scores)
                 test_gen_loader = DataLoader(gen_set, batch_size=16, shuffle=True)
      
-                # if args.generative_model =='SVAE':
-                #         generator = SVAE(output_directory=output_directory_skeletons_class,
-                #                         device=args.device,
-                #                         w_rec=weights_loss['wrec'],
-                #                         w_kl=weights_loss['wkl'])
-               
-                #         generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=train_loader)
-                #         # gen_set = Kimore(generated_samples,labels,gen_scores)
-                #         # gen_loader = DataLoader(gen_set,batch_size=16,shuffle =True)
-                # elif args.generative_model =='ASVAE':
-                #         generator = ASVAE(output_directory=output_directory_skeletons_class,
-                #                         device=args.device,
-                #                         w_rec=weights_loss['wrec'],
-                #                         w_kl=weights_loss['wkl'])
                 
-                #         generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=train_loader)
-                #         # gen_set = Kimore(generated_samples,labels,gen_scores)
-                #         # gen_loader = DataLoader(gen_set,batch_size=16,shuffle =True)
-                # elif args.generative_model =='VAE':
-                #         generator = VAE(output_directory=output_directory_skeletons_class,
-                #                         device=args.device,
-                #                         w_rec=weights_loss['wrec'],
-                #                         w_kl=weights_loss['wkl'])
-                  
-                #         generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=train_loader)
-                #         # gen_set = Kimore(generated_samples,labels,gen_scores)
-                #         # gen_loader = DataLoader(gen_set,batch_size=16,shuffle =True)
-                # elif args.generative_model =='CVAEL':
-                #         generator = CVAEL(output_directory=output_directory_skeletons_class,
-                #                         device=args.device,
-                #                         w_rec=weights_loss['wrec'],
-                #                         w_kl=weights_loss['wkl'])
-                       
-                # #                 generated_samples,gen_scores = generator.generate_samples_from_prior(device = args.device,gif_directory=output_directory_skeletons_class,dataloader=train_loader)
-                # gen_set = Kimore(generated_samples,labels,gen_scores)
-                # gen_loader = DataLoader(gen_set,batch_size=16,shuffle =True)
-                        
-        
 
                 if args.regression_models == 'STGCN':
 
