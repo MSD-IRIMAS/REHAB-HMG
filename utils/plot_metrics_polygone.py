@@ -11,7 +11,7 @@ from matplotlib.transforms import Affine2D
 from typing import Tuple
 
 map_metric_names = {
-    "FID": "FID",
+    # "FID": "FID",
     "MMS": "MMS",
     "COV": "Coverage",
     "Density": "Density",
@@ -128,6 +128,7 @@ def plot_metrics_on_polygone(
     if usedMetrics is None:
         metrics_ = list(df_metrics.columns)
         metrics_.remove('ON')
+        metrics_.remove('FID')
         metrics = [_metric for _metric in metrics_ if not "std" in _metric]
     else:
         metrics = usedMetrics
@@ -138,7 +139,7 @@ def plot_metrics_on_polygone(
     angles = _register_radar_projection(numberOfMetrics=numberOfMetrics, frame=frame)
 
     fig, ax = plt.subplots(figsize=figsize, nrows=1, ncols=1, subplot_kw=dict(projection="polygon-chart"))
-
+# Close the figure after saving to free up memory
     colors = plt.get_cmap("Dark2")(np.linspace(start=0.0, stop=1.0, num=len(df_metrics['ON'].unique())))
 
     ax.set_rgrids(np.linspace(start=0.1, stop=df_metrics.select_dtypes(include=["number"]).max().max(), num=5))
@@ -154,31 +155,27 @@ def plot_metrics_on_polygone(
     ax.set_varlabels([map_metric_names[_metric] for _metric in metrics])
     ax.legend(loc="upper right", bbox_to_anchor=(1.1, 1.15))
     fig.savefig(title + ".png")
-    plt.close(fig)  # Close the figure after saving to free up memory
+    plt.close(fig)  
 
 def process_and_plot_csv(file_path: str, title: str):
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
         plot_metrics_on_polygone(df_metrics=df, title=title)
 if __name__ == "__main__":
-    # models=['ASCVAE','SVAE']
-        reg=['REG','STGCN']
-    # for model in models :
-        
-        for run in range(1):
-            print('run------',run)
-            for i in range(5):
-                print('class------',i)
-                for m in reg:
-                    output_directory_results = f'../results/regression_models/{m}/'
-                    class_directory = os.path.join(output_directory_results, f'run_{run}/class_{i}')
-                    csv_files = [
-                        (os.path.join(class_directory, f'{m}_train_vs_noisy_vs_gen_{i}.csv'), f'{m}_polygone_train_vs_noisy_vs_gen_class_{i}'),
-                        (os.path.join(class_directory, f'{m}_train_vs_test{i}.csv'), f'{m}_polygone_train_vs_test_vs_gen_class_{i}')
-                        ]
-                    print('pircess')
-                    for csv_file, title in csv_files:
-                        print('plotting',class_directory)
-                        process_and_plot_csv(file_path=csv_file, title=os.path.join(class_directory, title))
-                    
+    num_classes=5
+
+    reg_models=['REG','STGCN']
+    for run in range(1):
+        for i in range(num_classes):
+            for model in reg_models:
+                output_directory_results = f'../results/regression_models/{model}/'
+                class_directory = os.path.join(output_directory_results, f'run_{run}/class_{i}')
+                csv_files = [
+                    (os.path.join(class_directory, f'{model}_train_vs_noisy_vs_gen_{i}.csv'), f'{model}_polygone_train_vs_noisy_vs_gen_class_{i}'),
+                    (os.path.join(class_directory, f'{model}_train_vs_test{i}.csv'), f'{model}_polygone_train_vs_test_vs_gen_class_{i}')
+                    ]
+                for csv_file, title in csv_files:
+                    print('plotting',class_directory)
+                    process_and_plot_csv(file_path=csv_file, title=os.path.join(class_directory, title))
+                
 
