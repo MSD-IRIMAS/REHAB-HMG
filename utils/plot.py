@@ -8,7 +8,7 @@ def plot_latent_space(latent_2d,labels,title,output_directory):
     plt.figure(figsize=(10,8))
     sns.scatterplot(data=df,x = "x",y="y",hue="label",palette="tab10",legend="full",alpha=0.8)
     plt.title(title)
-    plt.savefig(output_directory + title+'.pdf')
+    plt.savefig(output_directory + title+'.png')
     # plt.show()
 
 def plot_loss(epochs, train_losses, train_recon_losses, train_kl_losses, output_directory):
@@ -19,7 +19,7 @@ def plot_loss(epochs, train_losses, train_recon_losses, train_kl_losses, output_
     plt.ylabel('Loss')
     plt.title('Loss Curve')
     plt.legend()
-    plt.savefig(os.path.join(output_directory, 'loss.pdf'))
+    plt.savefig(os.path.join(output_directory, 'loss.png'))
     plt.close()
     # plt.show()
 
@@ -29,7 +29,7 @@ def plot_regressor_loss(epochs,train_loss,test_loss,output_directory):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss Curve')
-    plt.savefig(os.path.join(output_directory, 'loss.pdf'))
+    plt.savefig(os.path.join(output_directory, 'loss.png'))
     plt.legend()
     plt.close()
     # plt.show()
@@ -39,6 +39,6 @@ def plot_true_pred_scores(predicted_scores,true_scores, output_directory ,title 
     plt.xlabel('Sample Index')
     plt.ylabel('Score')
     plt.title(title)
-    plt.savefig(os.path.join(output_directory, title+'.pdf'))
+    plt.savefig(os.path.join(output_directory, title+'.png'))
     plt.legend()
     plt.close()
