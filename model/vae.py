@@ -75,7 +75,8 @@ class MotionDecoder(nn.Module):
         return z
 
 class VAE(nn.Module):
-    def __init__(self, output_directory, epochs, device, latent_dimension=16,filters=128, lr=1e-4, w_kl=1e-3, w_rec=0.999):
+    """The following model is Action conditioned VAE only (without the score) trained on the each exercise separately"""
+    def __init__(self, output_directory, epochs, device, latent_dimension=256,filters=128, lr=1e-4, w_kl=1e-3, w_rec=0.999):
         super(VAE, self).__init__()
         self.output_directory = output_directory
         self.epochs = epochs
@@ -148,31 +149,22 @@ class VAE(nn.Module):
                 min_loss = loss[-1]
                 torch.save(self.encoder.state_dict(), os.path.join(self.output_directory, 'best_encoder.pth'))
                 torch.save(self.decoder.state_dict(), os.path.join(self.output_directory, 'best_decoder.pth'))
-                
-
         torch.save(self.encoder.state_dict(), os.path.join(self.output_directory, 'last_encoder.pth'))
         torch.save(self.decoder.state_dict(), os.path.join(self.output_directory, 'last_decoder.pth'))
         plot_loss(self.epochs, loss, loss_rec, loss_kl,self.output_directory)
 
 
-
     def generate_skeleton(self, device):
-
         self.device =device
         self.to(device)
-        
         self.decoder.load_state_dict(torch.load(self.output_directory + 'best_decoder.pth', map_location=device))
-        
         self.encoder.eval()
         self.decoder.eval()
         sample = torch.randn(1, latent_dimension).to(device)
-       
-       
         with torch.no_grad():
                 generated_sample = self.decoder(sample).cpu().double().numpy()
         np.save('generated_sample.npy', generated_sample)
         return generated_sample
-
 
 
     def generate_samples_from_posterior(self, device, gif_directory, dataloader):
@@ -184,7 +176,6 @@ class VAE(nn.Module):
         generated_samples_unnormalized = []
         
         true_samples =[]
-       
         for data, _, _ in dataloader: 
             data = data.to(device)
             with torch.no_grad():
@@ -192,14 +183,10 @@ class VAE(nn.Module):
                 z = self.reparameterize(z_mu,z_logvar)
                 generated_sample = self.decoder(z ).cpu().double().detach().numpy()
         generated_samples_array = np.concatenate(generated_samples, axis=0)
-        # generated_samples_unnormalized = np.concatenate(generated_samples_unnormalized, axis=0)
         true_samples = np.concatenate(true_samples,axis=0)
-      
-        # np.save(os.path.join(gif_directory,'generated_samples_unnormalized.npy'), generated_samples_unnormalized)
         np.save(os.path.join(gif_directory,'generated_samples.npy'), generated_samples_array)
         np.save(os.path.join(gif_directory,f'true_samples_{class_index}.npy'), true_samples)
       
-
 
     def generate_samples_from_prior(self, device, gif_directory,num_samples):
         self.device = device
@@ -207,12 +194,11 @@ class VAE(nn.Module):
         print(self.output_directory + 'last_decoder.pth')
         self.decoder.load_state_dict(torch.load(self.output_directory + 'last_decoder.pth', map_location=device))
         generated_samples = []
-        generated_samples_unnormalized = []
         for i in range(num_samples):
             with torch.no_grad():
                 sample = torch.randn(1,self.latent_dimension).to(device)
                 generated_sample = self.decoder(sample ).cpu().double().detach().numpy()
-             
+                generated_samples.append(generated_sample)    
         generated_samples_array = np.concatenate(generated_samples, axis=0)
         np.save(os.path.join(gif_directory,'generated_samples_prior.npy'), generated_samples_array)
         return generated_samples_array
