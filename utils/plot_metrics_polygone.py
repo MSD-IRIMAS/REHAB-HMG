@@ -161,24 +161,24 @@ def process_and_plot_csv(file_path: str, title: str):
         df = pd.read_csv(file_path)
         plot_metrics_on_polygone(df_metrics=df, title=title)
 if __name__ == "__main__":
-    models=['ASCVAE','SVAE']
-    reg=['REG','STGCN']
-    for model in models :
-        output_directory_results = f'../results/Generative_models/Score+Action_conditioned/{model}/Wrec_0.999_Wkl_0.001/'
-        for run in range(5):
+    # models=['ASCVAE','SVAE']
+        reg=['REG','STGCN']
+    # for model in models :
+        
+        for run in range(1):
             print('run------',run)
             for i in range(5):
                 print('class------',i)
                 for m in reg:
+                    output_directory_results = f'../results/regression_models/{m}/'
                     class_directory = os.path.join(output_directory_results, f'run_{run}/class_{i}')
                     csv_files = [
                         (os.path.join(class_directory, f'{m}_train_vs_noisy_vs_gen_{i}.csv'), f'{m}_polygone_train_vs_noisy_vs_gen_class_{i}'),
-                        (os.path.join(class_directory, f'{m}_train_vs_test{i}.csv'), f'{m}_polygone_train_vs_test_vs_gen_class_{i}')]
+                        (os.path.join(class_directory, f'{m}_train_vs_test{i}.csv'), f'{m}_polygone_train_vs_test_vs_gen_class_{i}')
+                        ]
+                    print('pircess')
                     for csv_file, title in csv_files:
+                        print('plotting',class_directory)
                         process_and_plot_csv(file_path=csv_file, title=os.path.join(class_directory, title))
                     
-
-
-
-
 
