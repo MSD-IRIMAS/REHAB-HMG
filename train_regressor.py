@@ -126,8 +126,8 @@ if __name__ == "__main__":
                    
                 )
                 model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
-                model.predict_scores(test_loader,args.device)
-                model.plot_train_scores(device= args.device,train_loader=train_loader)
+                # model.predict_scores(test_loader,args.device)
+                # model.plot_train_scores(device= args.device,train_loader=train_loader)
     
     elif args.data_split == 'split':
         for _run in range(args.runs):
@@ -136,7 +136,6 @@ if __name__ == "__main__":
 
             output_directory_class = output_directory_run + 'class_' + str(args.class_index) + '/'
             create_directory(output_directory_class)
-            
 
             if args.regression_model == 'STGCN':
                 model = STGCN(
@@ -156,6 +155,6 @@ if __name__ == "__main__":
                     device=args.device,
                     
                 )
-                # model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
-                model.predict_scores(test_loader,args.device)
-                model.plot_train_scores(device= args.device,train_loader=train_loader)
+                model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
+                # model.predict_scores(test_loader,args.device)
+                # model.plot_train_scores(device= args.device,train_loader=train_loader)
