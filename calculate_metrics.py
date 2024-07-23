@@ -1,3 +1,5 @@
+
+
 def warn(*args, **kwargs):
     pass
 import os
@@ -14,21 +16,18 @@ from model.vae import VAE
 from model.vae_label import CVAEL
 from model.stgcn import STGCN
 from utils.visualize import create_directory
-from dataset.dataset import Kimore, load_class
 from torch.utils.data import DataLoader,Subset
 from utils.normalize import normalize_skeletons
 from utils.utils import get_weights_loss,get_dirs,noise_data
 from sklearn.model_selection import train_test_split
 from utils.metrics import FID,Coverage,MMS,FeatureExtractor,Density, APD
-
-
-
+from dataset.dataset import Kimore, load_class
 random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 torch.backends.cudnn.deterministic = True  # If using CUDA
-torch.backends.cudnn.benchmark = False
 
+torch.backends.cudnn.benchmark = False
 
 
 def get_args():
@@ -126,6 +125,7 @@ if __name__ == "__main__":
     create_directory(output_directory_gen_models)
 
 
+
     score_output_directory_weights_losses = output_directory_gen_models + 'Score+Action_conditioned' + '/ASCVAE/' +'Wrec_' + str(args.wrec) + '_Wkl_' + str(args.wkl) + '/'
       
 
@@ -217,6 +217,8 @@ if __name__ == "__main__":
 
                         fid_score = fid_calculator_stgcn.calculate_fid(train_loader, noisy_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         
                         #COV metric
                         cov_score = coverage_calculator_stgcn.calculate(train_loader, noisy_loader)
@@ -251,6 +253,8 @@ if __name__ == "__main__":
                         print(len(train_loader))
                         fid_score = fid_calculator_stgcn.calculate_fid(as_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         print('----------------------------------------------fid done')
           
 
@@ -288,6 +292,8 @@ if __name__ == "__main__":
                         print(len(train_loader))
                         fid_score = fid_calculator_stgcn.calculate_fid(a_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         print('----------------------------------------------fid done')
           
 
@@ -338,6 +344,8 @@ if __name__ == "__main__":
 
                         fid_score = fid_calculator_stgcn.calculate_fid(train_loader, test_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         
                         #COV metric
                         cov_score = coverage_calculator_stgcn.calculate(train_loader, test_loader)
@@ -369,6 +377,8 @@ if __name__ == "__main__":
                         #FID metric
                         fid_score = fid_calculator_stgcn.calculate_fid(as_test_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         print('----------------------------------------------fid done')
                     
                         cov_score = coverage_calculator_stgcn.calculate(xgenerated_loader=as_test_gen_loader, xreal_loader=train_loader)
@@ -402,6 +412,8 @@ if __name__ == "__main__":
                         #FID metric
                         fid_score = fid_calculator_stgcn.calculate_fid(a_test_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         print('----------------------------------------------fid done')
                     
                         cov_score = coverage_calculator_stgcn.calculate(xgenerated_loader=a_test_gen_loader, xreal_loader=train_loader)
@@ -460,6 +472,8 @@ if __name__ == "__main__":
 
                         fid_score = fid_calculator.calculate_fid(train_loader, noisy_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         
                         #COV metric
                         cov_score = coverage_calculator.calculate(train_loader, noisy_loader)
@@ -495,6 +509,8 @@ if __name__ == "__main__":
                         #FID metric
                         fid_score = fid_calculator.calculate_fid(as_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                   
                         cov_score = coverage_calculator.calculate(xgenerated_loader=as_gen_loader, xreal_loader=train_loader)
                         cov_mean = np.mean(cov_score)
@@ -526,6 +542,8 @@ if __name__ == "__main__":
                         #FID metric
                         fid_score = fid_calculator.calculate_fid(a_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                   
                         cov_score = coverage_calculator.calculate(xgenerated_loader=a_gen_loader, xreal_loader=train_loader)
                         cov_mean = np.mean(cov_score)
@@ -562,6 +580,8 @@ if __name__ == "__main__":
 
                         fid_score = fid_calculator.calculate_fid(train_loader, test_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         
                         #COV metric
                         cov_score = coverage_calculator.calculate(train_loader, test_loader)
@@ -594,6 +614,8 @@ if __name__ == "__main__":
                         #FID metric
                         fid_score = fid_calculator.calculate_fid(as_test_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         print('----------------------------------------------fid done')
                        
 
@@ -626,6 +648,8 @@ if __name__ == "__main__":
 
                         fid_score = fid_calculator.calculate_fid(a_test_gen_loader, train_loader)
                         fid_mean = np.mean(fid_score)
+                        if fid_mean < 0 :
+                            fid_mean=0
                         print('----------------------------------------------fid done')
                         
                         #COV metric
@@ -655,5 +679,6 @@ if __name__ == "__main__":
                     
                     
                         df.to_csv(reg_run_dir_class + f'/{args.regression_models}_train_vs_test{class_index}.csv', index=False)
+
 
 
