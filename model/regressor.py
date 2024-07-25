@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torch.autograd import Variable
 from utils.plot import plot_regressor_loss,plot_true_pred_scores
-from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 
 
 
@@ -164,7 +164,7 @@ class REG(nn.Module):
                 predicted_scores.append((predicted_score*100)+1)
 
                 print(f'Sample: {i+1}/{num_samples}, True Score: {true_score:.4f}, Predicted Score: {predicted_score:.4f}')
-        rmse = mean_squared_error(true_scores,predicted_scores)
+        rmse = root_mean_squared_error(true_scores,predicted_scores)
         mae = mean_absolute_error(true_scores,predicted_scores)
         mape = mean_absolute_percentage_error(true_scores,predicted_scores)
         print(f'RMSE: {rmse:.4f}')
