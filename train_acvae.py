@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader,Subset
 import torch
 from utils.normalize import normalize_skeletons, unnormalize_generated_skeletons
-from utils.visualize import plot_skel
 
 
 
@@ -138,7 +137,7 @@ if __name__ == "__main__":
                 test_set = Kimore(xtest,ytest,stest)
                 test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
             #------------------------Initialize the generative model
-                generator = CVAEL(output_directory=output_directory_run,
+                generator = ACVAE(output_directory=output_directory_run,
                 epochs=args.epochs,
                 device=args.device)
                 generator.train_function(train_loader,device=args.device)

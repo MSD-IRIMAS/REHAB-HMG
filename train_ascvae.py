@@ -16,7 +16,7 @@ from model.ascvae import ASCVAE
 from torch.utils.data import DataLoader,Subset
 import torch
 from utils.normalize import normalize_skeletons,unnormalize_generated_skeletons
-from utils.visualize import plot_skel
+
 def get_args():
     parser = argparse.ArgumentParser(
     description="")
@@ -143,7 +143,7 @@ if __name__ == "__main__":
                                         device=args.device,
                                         w_rec=args.wrec,
                                         w_kl=args.wkl)
-                    generator.train_function(dataloader=train_loader,device=args.device)
+                    # generator.train_function(dataloader=train_loader,device=args.device)
                     generator.visualize_latent_space(train_loader,device=args.device)
                    
                 elif args.generative_model == 'SCVAE':
@@ -156,12 +156,12 @@ if __name__ == "__main__":
                     xtest,_,_,_,_,_,_= normalize_skeletons(xtest,min_X, max_X,min_Y,max_Y, min_Z,max_Z)
                     test_set = Kimore(xtest,ytest,stest)
                     test_loader = DataLoader(test_set,batch_size=16,shuffle=False)
-                    generator = SVAE(output_directory=output_directory_skeletons,
+                    generator = SCVAE(output_directory=output_directory_skeletons,
                                         epochs=args.epochs,
                                         device=args.device,
                                         w_rec=args.wrec,
                                         w_kl=args.wkl)
-                    generator.train_function(train_loader,device=args.device)
+                    # generator.train_function(train_loader,device=args.device)
                 
 
 

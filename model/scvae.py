@@ -14,7 +14,7 @@ from sklearn.decomposition import PCA
 sys.path.append('..')
 from utils.plot import plot_loss, plot_latent_space
 from utils.normalize import unnormalize_generated_skeletons
-from utils.visualize import plot_skel
+
 from dataset.dataset import load_class
 from sklearn.mixture import GaussianMixture
 class MotionEncoder(nn.Module):
