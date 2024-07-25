@@ -10,10 +10,10 @@ sys.path.append('/home/hferrar/HMG/utils')
 from utils.visualize import create_directory
 from dataset.dataset import Kimore, load_data,load_class
 from sklearn.model_selection import train_test_split
-from model.cvae import CVAE
+from model.scvae import SCVAE
 from torch.utils.data import DataLoader, TensorDataset,Subset
 import torch
-
+from utils.normalize import normalize_skeletons
 def get_args():
     parser = argparse.ArgumentParser(
         description="Choose which samples to train the VAE on with the type of split.")
@@ -35,7 +35,7 @@ def get_args():
     parser.add_argument(
         '--weight-rec', 
         type=float, 
-        default=0.99, 
+        default=0.999, 
         help="Weight for the reconstruction loss.")
     parser.add_argument(
         '--weight-kl', 
@@ -55,12 +55,12 @@ def get_args():
     parser.add_argument(
         '--class_index', 
         type=int, 
-        default=0, 
+        default=5, 
         help="Which class to generate from")
     parser.add_argument(
         '--generative-model', 
         type=str, 
-        default='CVAE', 
+        default='SCVAE', 
         help="Which generative model to use.")
 
     args = parser.parse_args()
@@ -71,12 +71,13 @@ def get_args():
 def load_indices(class_index,fold_idx):
     
 
-    train_indices = np.load(f'data/folds_indexes/ex{class_index+1}/indexes_train_fold{fold_idx-1}.npy') 
-    test_indices = np.load(f'data/folds_indexes/ex{class_index+1}/indexes_test_fold{fold_idx-1}.npy') 
+    train_indices = np.load(f'../folds_indexes/ex{class_index+1}/indexes_train_fold{fold_idx-1}.npy') 
+    test_indices = np.load(f'../folds_indexes/ex{class_index+1}/indexes_test_fold{fold_idx-1}.npy') 
     return train_indices,test_indices
 
 
 def create_dataloaders(data, labels, scores, train_idx, test_idx, batch_size):
+    data,_,_,_,_,_,_ = normalize_skeletons(data)
     train_data = Subset(Kimore(data, labels, scores), train_idx)
     test_data = Subset(Kimore(data, labels, scores), test_idx)
     
@@ -107,52 +108,53 @@ if __name__ == "__main__":
     create_directory(output_directory_weights_losses)
 
     for _run in range(args.runs):
-        output_directory_run = output_directory_results + 'run_' + str(_run) + '/'
-        create_directory(output_directory_run)
-        output_directory_cross_val = output_directory_run+ 'cross_validation'+'/'
-        create_directory(output_directory_cross_val)
-        output_directory_fold_class = output_directory_cross_val + 'class_' + str(args.class_index) + '/'
-        create_directory(output_directory_fold_class)
+        for class_index in range(args.class_index):
+            output_directory_run = output_directory_results + 'cross_validation'+'/'+ 'run_' + str(_run) + '/'
+            create_directory(output_directory_run)
+            output_directory_cross_val = output_directory_run
+            create_directory(output_directory_cross_val)
+            output_directory_fold_class = output_directory_cross_val + 'class_' + str(class_index) + '/'
+            create_directory(output_directory_fold_class)
 
-        results = []
-        dataset_dir = 'data/' + args.dataset + '/'
-        data,labels,scores = load_class(args.class_index,root_dir=dataset_dir)
-        for fold_idx in range(1, 6):
-            print(f'Processing Fold {fold_idx}')
-            
-            output_directory_fold = output_directory_fold_class + 'fold_' + str(fold_idx) + '/'
-            create_directory(output_directory_fold)
-            output_directory_skeletons = output_directory_fold + 'generated_samples/'
-            create_directory(output_directory_skeletons)
-
-            
-
-            # train_data, train_labels, train_scores, test_data, test_labels, test_scores = load_fold_data(fold_idx)
-            # train_dataset = Kimore(train_data,train_labels,train_scores)
-            # test_dataset = Kimore(test_data, test_labels, test_scores)
-            # train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-            # test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-            train_indices,test_indices = load_indices(args.class_index,fold_idx)
-            train_loader, test_loader = create_dataloaders(data,labels,scores,train_indices,test_indices,batch_size=16 )
-            
-            if args.generative_model == 'CVAE':
-                generator = CVAE(output_directory=output_directory_fold,
-                                 epochs=args.epochs,
-                                 device=args.device,
-                                 w_rec=args.weight_rec,
-                                 w_kl=args.weight_kl)
-
+            results = []
+            dataset_dir = 'data/' + args.dataset + '/'
+            data,labels,scores = load_class(class_index,root_dir=dataset_dir)
+            for fold_idx in range(1, 6):
+                print(f'Processing Fold {fold_idx}')
+                
+                output_directory_fold = output_directory_fold_class + 'fold_' + str(fold_idx) + '/'
+                create_directory(output_directory_fold)
+                # output_directory_skeletons = output_directory_fold + 'generated_samples/'
+                # create_directory(output_directory_skeletons)
 
                 
 
-                generator.train_function(train_loader, args.device)
-                test_loss = generator.evaluate_function(test_loader, args.device)
-                results.append(test_loss)
-                print(f'Fold {fold_idx} Test Loss: {test_loss}')
+                # train_data, train_labels, train_scores, test_data, test_labels, test_scores = load_fold_data(fold_idx)
+                # train_dataset = Kimore(train_data,train_labels,train_scores)
+                # test_dataset = Kimore(test_data, test_labels, test_scores)
+                # train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+                # test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+                train_indices,test_indices = load_indices(class_index,fold_idx)
+                train_loader, test_loader = create_dataloaders(data,labels,scores,train_indices,test_indices,batch_size=16 )
+                
+                if args.generative_model == 'SCVAE':
+                    generator = SCVAE(output_directory=output_directory_fold,
+                                    epochs=args.epochs,
+                                    device=args.device,
+                                    w_rec=args.weight_rec,
+                                    w_kl=args.weight_kl)
 
 
-        average_test_loss = np.mean(results)
-        print(f'Average Test Loss: {average_test_loss}')
+                    
+
+                    generator.train_function(train_loader, args.device)
+                    test_loss = generator.evaluate_function(test_loader, args.device)
+                    results.append(test_loss)
+                    print(f'Fold {fold_idx} Test Loss: {test_loss}')
+
+
+                average_test_loss = np.mean(results)
+                print(f'Average Test Loss: {average_test_loss}')
 
 
 
