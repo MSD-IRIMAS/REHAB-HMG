@@ -119,7 +119,7 @@ if __name__ == "__main__":
     
 
 
-    for _run in range(args.runs):
+    for _run in range(args.runs):   
 
                 output_directory_run = output_directory_weights_losses + 'run_' + str(_run) + '/'
                 create_directory(output_directory_run)
@@ -143,7 +143,7 @@ if __name__ == "__main__":
                                         device=args.device,
                                         w_rec=args.wrec,
                                         w_kl=args.wkl)
-                    # generator.train_function(dataloader=train_loader,device=args.device)
+                    generator.train_function(dataloader=train_loader,device=args.device)
                     generator.visualize_latent_space(train_loader,device=args.device)
                    
                 elif args.generative_model == 'SCVAE':
