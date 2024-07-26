@@ -8,6 +8,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.animation import FuncAnimation
 from tqdm import tqdm
 import time
+import os
 def plot_3d_motion(x, mp_joints, kinematic_tree, title='sample', figsize=(10, 10), fps=30, radius=10):
     matplotlib.use('Agg')
 
@@ -75,22 +76,22 @@ def plot_3d_motion(x, mp_joints, kinematic_tree, title='sample', figsize=(10, 10
     ani.save('../sample.gif', fps=fps)
     plt.close()
 
-joint_pairs = [
-    (2, 1), (1, 0), (3, 4), (4, 5), (5, 6), (7, 8), (8, 9), (9, 10), (0, 11), (0, 14), 
-    (12, 13), (11, 12), (14, 15), (15, 16), (3, 17), (2, 17), (7, 17),
-]
+# joint_pairs = [
+#     (2, 1), (1, 0), (3, 4), (4, 5), (5, 6), (7, 8), (8, 9), (9, 10), (0, 11), (0, 14), 
+#     (12, 13), (11, 12), (14, 15), (15, 16), (3, 17), (2, 17), (7, 17),
+# ]
 
-sample = np.load('../data/Kimore/data.npy')
-mp_joint = []
-x = sample[0:]
-joint = x.reshape(-1, 18, 3)
-mp_joint.append(joint)
+# sample = np.load('../data/Kimore/data.npy')
+# mp_joint = []
+# x = sample[0:]
+# joint = x.reshape(-1, 18, 3)
+# mp_joint.append(joint)
 
 
-start = time.time()
-plot_3d_motion(joint_pairs, mp_joint, joint_pairs, fps=30)
-end = time.time()
-print(end - start)
+# start = time.time()
+# plot_3d_motion(joint_pairs, mp_joint, joint_pairs, fps=30)
+# end = time.time()
+# print(end - start)
 
 
 
@@ -112,13 +113,13 @@ print(end - start)
 # # reshape_npy_array('sample.npy')
 # #######################################################################################################################################
 
-# def create_directory(directory_name):
-#     '''create a directory for the png files and the gif file'''
-#     try:
-#         os.makedirs(directory_name)
-#         print(f"Directory '{directory_name}' created successfully.")
-#     except FileExistsError:
-#         print(f"Directory '{directory_name}' already exists.")
+def create_directory(directory_name):
+    '''create a directory for the png files and the gif file'''
+    try:
+        os.makedirs(directory_name)
+        print(f"Directory '{directory_name}' created successfully.")
+    except FileExistsError:
+        print(f"Directory '{directory_name}' already exists.")
 
 # #######################################################################################################################################
 
