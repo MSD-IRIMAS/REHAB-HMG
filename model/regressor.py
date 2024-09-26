@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from torch.autograd import Variable
 from utils.plot import plot_regressor_loss,plot_true_pred_scores
-from sklearn.metrics import root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 
 
 
@@ -151,6 +151,7 @@ class REG(nn.Module):
         num_samples = data_loader.dataset.__len__()
         true_scores = []
         predicted_scores = []
+        print('------------------',self.output_directory + 'best_regressor.pth')
         self.load_state_dict(torch.load(self.output_directory + 'best_regressor.pth', map_location=device))
         self.eval()
         with torch.no_grad():
@@ -174,5 +175,6 @@ class REG(nn.Module):
         plot_true_pred_scores(predicted_scores,true_scores,self.output_directory,title='test_scores')
         self.square_plot(predicted_scores,true_scores)
         return true_scores, predicted_scores
+
 
 

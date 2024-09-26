@@ -12,7 +12,7 @@ sys.path.append('../')
 from utils.graph_layers.graph import Graph
 from utils.graph_layers.temporal_conv import TemporalConvGraph
 from utils.plot import plot_regressor_loss,plot_true_pred_scores
-from sklearn.metrics import root_mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 from scipy.stats import spearmanr
 class st_gcn(nn.Module):
     r"""Applies a spatial temporal graph convolution over an input graph sequence.
