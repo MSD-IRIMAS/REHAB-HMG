@@ -12,6 +12,7 @@ from sklearn.manifold import TSNE
 from torch.autograd import Variable
 from sklearn.decomposition import PCA
 sys.path.append('..')
+sys.path.append('../utils')
 from utils.plot import plot_loss, plot_latent_space
 from utils.normalize import unnormalize_generated_skeletons
 
@@ -175,21 +176,24 @@ class SCVAE(nn.Module):
 
 
 
-    def generate_skeleton(self, device,score):
+    def generate_skeleton(self, device,score_value):
 
         self.device =device
         self.to(device)
         
         self.decoder.load_state_dict(torch.load(self.output_directory + 'best_decoder.pth', map_location=device))
+        print('decoder path------------',self.output_directory + 'best_decoder.pth')
         
         self.encoder.eval()
         self.decoder.eval()
-        sample = torch.randn(1, latent_dimension).to(device)
+        sample = torch.randn(1, 256).to(device)
         score = torch.tensor([score_value ]).unsqueeze(1).to(device)
      
         with torch.no_grad():
                 generated_sample = self.decoder(sample, score).cpu().double().numpy()
-        np.save('generated_sample.npy', generated_sample)
+                # unnormalized_sample = unnormalize_generated_skeletons(generated_sample)
+
+        np.save(f'generated_sample_score={score_value}.npy', generated_sample)
         return generated_sample
     
       
