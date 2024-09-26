@@ -59,7 +59,7 @@ def get_args():
         '--runs',
         help="Number of experiments to do.",
         type=int,
-        default=1
+        default=5
     )
 
 

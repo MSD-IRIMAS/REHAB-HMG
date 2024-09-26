@@ -16,6 +16,7 @@ from model.ascvae import ASCVAE
 from torch.utils.data import DataLoader,Subset
 import torch
 from utils.normalize import normalize_skeletons,unnormalize_generated_skeletons
+from utils.visualize import plot_skel
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -46,7 +47,7 @@ def get_args():
         '--runs',
         help="Number of experiments to do.",
         type=int,
-        default=1
+        default=5
     )
 
 
@@ -161,7 +162,12 @@ if __name__ == "__main__":
                                         device=args.device,
                                         w_rec=args.wrec,
                                         w_kl=args.wkl)
-                    # generator.train_function(train_loader,device=args.device)
+                    generator.train_function(train_loader,device=args.device)
+                    generated_samples,scores = generator.generate_samples_from_prior(device=args.device,gif_directory=output_directory_skeletons_class,dataloader=test_loader)
+                    for i in range(5):
+                        unnormalized_sample= unnormalize_generated_skeletons(generated_samples[i:],min_X, max_X,min_Y,max_Y, min_Z,max_Z)
+                        plot_skel(unnormalized_sample,output_directory=output_directory_skeletons_class,title=f'sample_score_{scores[i]}')
+                        print('plotting done', i)
                 
 
 
