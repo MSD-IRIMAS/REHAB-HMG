@@ -43,7 +43,7 @@ def get_args():
         '--runs',
         help="Number of experiments to do.",
         type=int,
-        default=1
+        default=5
     )
     parser.add_argument(
         '--epochs',
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                     device=args.device,
                     edge_importance_weighting=True)
                
-                model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
+                # model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
                 model.predict_scores(test_loader,args.device)
                 model.plot_train_scores(device= args.device,train_loader=train_loader)
 
@@ -125,13 +125,13 @@ if __name__ == "__main__":
                     device=args.device,
                    
                 )
-                model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
-                # model.predict_scores(test_loader,args.device)
-                # model.plot_train_scores(device= args.device,train_loader=train_loader)
+                # model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
+                model.predict_scores(test_loader,args.device)
+                model.plot_train_scores(device= args.device,train_loader=train_loader)
     
     elif args.data_split == 'split':
         for _run in range(args.runs):
-            output_directory_run = output_directory_regressor + 'run_' + str(_run) + '/'
+            output_directory_run = output_directory_regressor + 'run_' + str(4) + '/'
             create_directory(output_directory_run)
 
             output_directory_class = output_directory_run + 'class_' + str(args.class_index) + '/'
@@ -144,7 +144,7 @@ if __name__ == "__main__":
                     device=args.device,
                     edge_importance_weighting=True)
                
-                model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
+                # model.train_stgcn(device=args.device,train_loader=train_loader,test_loader=test_loader)
                 model.predict_scores(test_loader,args.device)
                 model.plot_train_scores(device= args.device,train_loader=train_loader)
 
@@ -156,5 +156,5 @@ if __name__ == "__main__":
                     
                 )
                 # model.train_fun(device=args.device,train_loader=train_loader,test_loader=test_loader)
-                # model.predict_scores(test_loader,args.device)
-                # model.plot_train_scores(device= args.device,train_loader=train_loader)
+                model.predict_scores(test_loader,args.device)
+                model.plot_train_scores(device= args.device,train_loader=train_loader)
